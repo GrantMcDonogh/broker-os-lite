@@ -39,26 +39,61 @@
   .user-info .name { color: #e2e8f0; font-weight: 500; }
   .user-info .role { color: #64748b; font-size: 11px; }
 
-  /* Main Content - showing a task board in background */
+  /* Main Content */
   .main { padding: 24px; overflow-y: auto; }
   .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
   .main-title { font-size: 22px; font-weight: 700; color: #f1f5f9; }
-  .board-placeholder {
-    display: flex; gap: 16px; height: calc(100vh - 120px); opacity: 0.4;
-  }
-  .col-placeholder {
-    flex: 1; min-width: 200px;
-  }
-  .col-head { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-  .card-ph {
+  .header-actions { display: flex; gap: 8px; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost { background: rgba(255,255,255,0.04); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+  .btn-primary { background: #3b82f6; color: #0a0e17; font-weight: 600; }
+  .btn-primary:hover { background: #60a5fa; }
+
+  /* Kanban */
+  .board { display: flex; gap: 16px; height: calc(100vh - 120px); opacity: 0.4; }
+  .column { flex: 1; min-width: 240px; }
+  .column-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 0 4px; }
+  .column-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .column-title { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .column-count { font-size: 12px; color: #475569; }
+  .cards { display: flex; flex-direction: column; gap: 8px; }
+
+  .card {
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 10px;
     padding: 14px;
-    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
   }
-  .card-ph-title { font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
-  .card-ph-meta { font-size: 11px; color: #475569; }
+  .card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); transform: translateY(-1px); }
+  .card-title { font-size: 14px; font-weight: 500; color: #e2e8f0; margin-bottom: 8px; line-height: 1.4; }
+  .card-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; margin-bottom: 8px; }
+  .card-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: #475569; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .card-tags { display: flex; gap: 4px; }
+  .tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .tag-motor { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .tag-home { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .tag-commercial { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .tag-claim { background: rgba(239,68,68,0.15); color: #f87171; }
+  .card-avatar { width: 24px; height: 24px; border-radius: 50%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+
+  /* AI processing card */
+  .card.ai-active {
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 0 20px rgba(59,130,246,0.05);
+    animation: ai-card-pulse 2s ease-in-out infinite;
+  }
+  @keyframes ai-card-pulse {
+    0%, 100% { border-color: rgba(59,130,246,0.3); }
+    50% { border-color: rgba(59,130,246,0.15); }
+  }
+  .ai-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #3b82f6; margin-top: 8px; }
+
+  .card.review-needed { border-left: 3px solid #f59e0b; }
+  .review-badge { font-size: 11px; color: #f59e0b; font-weight: 500; }
 
   /* Chat Panel */
   .chat {
@@ -332,29 +367,142 @@
     </div>
   </nav>
 
-  <!-- Main (dimmed board in background) -->
+  <!-- Main Content -->
   <main class="main">
     <div class="main-header">
       <div class="main-title">Task Board</div>
+      <div class="header-actions">
+        <button class="btn btn-ghost">&#9776; List view</button>
+        <button class="btn btn-ghost">&#9683; Filter</button>
+        <button class="btn btn-primary">+ New task</button>
+      </div>
     </div>
-    <div class="board-placeholder">
-      <div class="col-placeholder">
-        <div class="col-head">To Do &middot; 4</div>
-        <div class="card-ph"><div class="card-ph-title">Review renewal pack</div><div class="card-ph-meta">Van der Merwe Trust &middot; Due 18 Mar</div></div>
-        <div class="card-ph"><div class="card-ph-title">Follow up arrears</div><div class="card-ph-meta">Nkosi Transport &middot; Overdue</div></div>
+
+    <div class="board">
+      <!-- To Do -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#64748b"></div>
+          <div class="column-title">To Do</div>
+          <div class="column-count">4</div>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title">Review renewal pack for Van der Merwe Family Trust</div>
+            <div class="card-meta">Sarah Peters <span class="card-meta-dot"></span> Due 18 Mar</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-commercial">Commercial</span></div>
+              <div class="card-avatar">SP</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Follow up on premium arrears &mdash; Nkosi Transport</div>
+            <div class="card-meta">Grant McDonogh <span class="card-meta-dot"></span> Overdue</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-motor">Fleet</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Prepare gap analysis for Botha residence</div>
+            <div class="card-meta">Grant McDonogh <span class="card-meta-dot"></span> Due 20 Mar</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-home">Homeowners</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-placeholder">
-        <div class="col-head">In Progress &middot; 3</div>
-        <div class="card-ph"><div class="card-ph-title">Add Toyota Hilux to motor</div><div class="card-ph-meta">J. Smith &middot; Santam</div></div>
-        <div class="card-ph"><div class="card-ph-title">Generate ROA for Moosa</div><div class="card-ph-meta">Hollard &middot; HOL-HOM-9981</div></div>
+
+      <!-- In Progress -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#2563eb"></div>
+          <div class="column-title">In Progress</div>
+          <div class="column-count">3</div>
+        </div>
+        <div class="cards">
+          <div class="card ai-active">
+            <div class="card-title">Add Toyota Hilux to J. Smith motor policy</div>
+            <div class="card-meta">Santam <span class="card-meta-dot"></span> SAN-MOT-12345</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-motor">Motor</span></div>
+              <div class="card-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #0a0e17; border: none; font-size: 12px;">AI</div>
+            </div>
+            <div class="ai-status"><span class="ai-dot"></span> Generating amendment request...</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Remarket Patel Body Corporate insurance</div>
+            <div class="card-meta">Multiple quotes <span class="card-meta-dot"></span> 12 units</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-commercial">Body Corp</span></div>
+              <div class="card-avatar">SP</div>
+            </div>
+          </div>
+          <div class="card ai-active">
+            <div class="card-title">Generate ROA for Moosa renewal call</div>
+            <div class="card-meta">Hollard <span class="card-meta-dot"></span> HOL-HOM-9981</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-home">Homeowners</span></div>
+              <div class="card-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #0a0e17; border: none; font-size: 12px;">AI</div>
+            </div>
+            <div class="ai-status"><span class="ai-dot"></span> Transcribing call recording...</div>
+          </div>
+        </div>
       </div>
-      <div class="col-placeholder">
-        <div class="col-head">Review &middot; 2</div>
-        <div class="card-ph"><div class="card-ph-title">Commission discrepancy</div><div class="card-ph-meta">Santam Feb &middot; R 2,340</div></div>
+
+      <!-- Review -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#f59e0b"></div>
+          <div class="column-title">Review</div>
+          <div class="column-count">2</div>
+        </div>
+        <div class="cards">
+          <div class="card review-needed">
+            <div class="card-title">Commission discrepancy &mdash; Santam Feb statement</div>
+            <div class="card-meta">R 2,340 variance <span class="card-meta-dot"></span> 14 policies</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="review-badge">Needs review</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+          <div class="card review-needed">
+            <div class="card-title">ROA ready &mdash; Dlamini comprehensive motor</div>
+            <div class="card-meta">AI-generated <span class="card-meta-dot"></span> Bryte</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="review-badge">Review ROA</span></div>
+              <div class="card-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #0a0e17; border: none; font-size: 12px;">AI</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-placeholder">
-        <div class="col-head">Done &middot; 5</div>
-        <div class="card-ph"><div class="card-ph-title">FNOL — Jacobs theft</div><div class="card-ph-meta">Completed today</div></div>
+
+      <!-- Done -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#10b981"></div>
+          <div class="column-title">Done</div>
+          <div class="column-count">5</div>
+        </div>
+        <div class="cards">
+          <div class="card" style="opacity: 0.6;">
+            <div class="card-title">FNOL submitted &mdash; Jacobs motor theft</div>
+            <div class="card-meta">Santam <span class="card-meta-dot"></span> Completed today</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-claim">Claim</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+          <div class="card" style="opacity: 0.6;">
+            <div class="card-title">Renewal confirmed &mdash; Williams homeowners</div>
+            <div class="card-meta">Old Mutual Insure <span class="card-meta-dot"></span> Completed today</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-home">Homeowners</span></div>
+              <div class="card-avatar">SP</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
