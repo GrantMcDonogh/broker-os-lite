@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Light Minimal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f5f7; color: #3b4252; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr 380px; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #2563eb; }
+  .org-name { font-size: 12px; color: #9ca3af; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #6b7280; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: #f3f4f6; color: #374151; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #2563eb; color: #fff; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #e5e7eb; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #111827; font-weight: 500; }
+  .user-info .role { color: #9ca3af; font-size: 11px; }
+
+  /* Main Content */
+  .main { padding: 24px; overflow-y: auto; background: #f4f5f7; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .main-title { font-size: 22px; font-weight: 700; color: #111827; }
+  .header-actions { display: flex; gap: 8px; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost { background: #fff; color: #6b7280; border: 1px solid #e5e7eb; }
+  .btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; }
+  .btn-primary { background: #2563eb; color: #fff; font-weight: 600; }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  /* Kanban */
+  .board { display: flex; gap: 16px; height: calc(100vh - 120px); }
+  .column { flex: 1; min-width: 240px; }
+  .column-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 0 4px; }
+  .column-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .column-title { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+  .column-count { font-size: 12px; color: #9ca3af; }
+  .cards { display: flex; flex-direction: column; gap: 8px; }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .card:hover { background: #fafafa; border-color: #d1d5db; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .card-title { font-size: 14px; font-weight: 500; color: #111827; margin-bottom: 8px; line-height: 1.4; }
+  .card-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
+  .card-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: #d1d5db; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .card-tags { display: flex; gap: 4px; }
+  .tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .tag-motor { background: #ede9fe; color: #7c3aed; }
+  .tag-home { background: #dcfce7; color: #16a34a; }
+  .tag-commercial { background: #ffedd5; color: #ea580c; }
+  .tag-claim { background: #fee2e2; color: #dc2626; }
+  .card-avatar { width: 24px; height: 24px; border-radius: 50%; background: #f3f4f6; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #6b7280; }
+
+  /* AI processing card */
+  .card.ai-active {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px #bfdbfe;
+    animation: ai-pulse 2s ease-in-out infinite;
+  }
+  @keyframes ai-pulse {
+    0%, 100% { box-shadow: 0 0 0 1px #bfdbfe; }
+    50% { box-shadow: 0 0 0 1px #dbeafe; }
+  }
+  .ai-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #2563eb; margin-top: 8px; }
+  .ai-dot { width: 6px; height: 6px; border-radius: 50%; background: #2563eb; animation: blink 1s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .card.review-needed { border-left: 3px solid #f59e0b; }
+  .review-badge { font-size: 11px; color: #d97706; font-weight: 500; }
+
+  /* Chat Panel */
+  .chat {
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-title { font-size: 14px; font-weight: 600; color: #111827; }
+  .chat-collapse { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; }
+  .chat-collapse:hover { color: #6b7280; }
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #fafbfc; }
+  .msg { max-width: 90%; }
+  .msg-user { align-self: flex-end; }
+  .msg-user .msg-bubble { background: #111827; color: #f9fafb; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .msg-bubble { background: #ffffff; border: 1px solid #e5e7eb; color: #374151; border-radius: 16px 16px 16px 4px; padding: 10px 14px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .msg-ai .msg-bubble strong { color: #111827; }
+
+  /* Inline task card in chat */
+  .chat-task-card {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .chat-task-title { color: #111827; font-weight: 500; margin-bottom: 6px; }
+  .chat-task-meta { color: #6b7280; font-size: 12px; line-height: 1.6; }
+  .chat-task-progress { margin-top: 8px; height: 3px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+  .chat-task-progress-bar { height: 100%; background: #2563eb; border-radius: 2px; width: 65%; transition: width 0.5s; }
+
+  .chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #111827;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+  }
+  .chat-input::placeholder { color: #9ca3af; }
+  .chat-input:focus { border-color: #2563eb; background: #fff; }
+  .mic-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .mic-btn:hover { background: #eff6ff; color: #2563eb; border-color: #2563eb; }
+  .send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .send-btn:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+
+    <div class="nav-item active">
+      <span class="nav-icon">&#9638;</span> Dashboard
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9782;</span> Clients
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9744;</span> Policies
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9889;</span> Claims
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9776;</span> Commission
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">Task Board</div>
+      <div class="header-actions">
+        <button class="btn btn-ghost">&#9776; List view</button>
+        <button class="btn btn-ghost">&#9683; Filter</button>
+        <button class="btn btn-primary">+ New task</button>
+      </div>
+    </div>
+
+    <div class="board">
+      <!-- To Do -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#9ca3af"></div>
+          <div class="column-title">To Do</div>
+          <div class="column-count">4</div>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title">Review renewal pack for Van der Merwe Family Trust</div>
+            <div class="card-meta">Sarah Peters <span class="card-meta-dot"></span> Due 18 Mar</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-commercial">Commercial</span></div>
+              <div class="card-avatar">SP</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Follow up on premium arrears &mdash; Nkosi Transport</div>
+            <div class="card-meta">Grant McDonogh <span class="card-meta-dot"></span> <span style="color:#dc2626">Overdue</span></div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-motor">Fleet</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Prepare gap analysis for Botha residence</div>
+            <div class="card-meta">Grant McDonogh <span class="card-meta-dot"></span> Due 20 Mar</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-home">Homeowners</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- In Progress -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#2563eb"></div>
+          <div class="column-title">In Progress</div>
+          <div class="column-count">3</div>
+        </div>
+        <div class="cards">
+          <div class="card ai-active">
+            <div class="card-title">Add Toyota Hilux to J. Smith motor policy</div>
+            <div class="card-meta">Santam <span class="card-meta-dot"></span> SAN-MOT-12345</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-motor">Motor</span></div>
+              <div class="card-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; font-size: 12px;">AI</div>
+            </div>
+            <div class="ai-status"><span class="ai-dot"></span> Generating amendment request...</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Remarket Patel Body Corporate insurance</div>
+            <div class="card-meta">Multiple quotes <span class="card-meta-dot"></span> 12 units</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-commercial">Body Corp</span></div>
+              <div class="card-avatar">SP</div>
+            </div>
+          </div>
+          <div class="card ai-active">
+            <div class="card-title">Generate ROA for Moosa renewal call</div>
+            <div class="card-meta">Hollard <span class="card-meta-dot"></span> HOL-HOM-9981</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-home">Homeowners</span></div>
+              <div class="card-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; font-size: 12px;">AI</div>
+            </div>
+            <div class="ai-status"><span class="ai-dot"></span> Transcribing call recording...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#f59e0b"></div>
+          <div class="column-title">Review</div>
+          <div class="column-count">2</div>
+        </div>
+        <div class="cards">
+          <div class="card review-needed">
+            <div class="card-title">Commission discrepancy &mdash; Santam Feb statement</div>
+            <div class="card-meta">R 2,340 variance <span class="card-meta-dot"></span> 14 policies</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="review-badge">Needs review</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+          <div class="card review-needed">
+            <div class="card-title">ROA ready &mdash; Dlamini comprehensive motor</div>
+            <div class="card-meta">AI-generated <span class="card-meta-dot"></span> Bryte</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="review-badge">Review ROA</span></div>
+              <div class="card-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border: none; font-size: 12px;">AI</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Done -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-dot" style="background:#10b981"></div>
+          <div class="column-title">Done</div>
+          <div class="column-count">5</div>
+        </div>
+        <div class="cards">
+          <div class="card" style="opacity: 0.6;">
+            <div class="card-title">FNOL submitted &mdash; Jacobs motor theft</div>
+            <div class="card-meta">Santam <span class="card-meta-dot"></span> Completed today</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-claim">Claim</span></div>
+              <div class="card-avatar">GM</div>
+            </div>
+          </div>
+          <div class="card" style="opacity: 0.6;">
+            <div class="card-title">Renewal confirmed &mdash; Williams homeowners</div>
+            <div class="card-meta">Old Mutual Insure <span class="card-meta-dot"></span> Completed today</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-home">Homeowners</span></div>
+              <div class="card-avatar">SP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chat Panel -->
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="chat-title">Chat</div>
+      <button class="chat-collapse">&raquo;</button>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg msg-user">
+        <div class="msg-bubble">Add a Toyota Hilux 2024 to John Smith's motor policy, reg CA 123-456</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          Found John Smith's motor policy with Santam (SAN-MOT-12345). Creating an amendment task to add the Toyota Hilux.
+          <div class="chat-task-card">
+            <div class="chat-task-title">Add Toyota Hilux to J. Smith motor policy</div>
+            <div class="chat-task-meta">
+              Client: John Smith<br>
+              Policy: SAN-MOT-12345 &middot; Santam<br>
+              Board: Underwriting &middot; In Progress
+            </div>
+            <div class="chat-task-progress">
+              <div class="chat-task-progress-bar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">How many renewals are due this month?</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          You have <strong>12 renewals</strong> due in March 2026:<br><br>
+          &bull; 4 motor policies<br>
+          &bull; 3 homeowners<br>
+          &bull; 3 commercial<br>
+          &bull; 2 body corporate<br><br>
+          3 are within the next 7 days. Want me to generate renewal packs for those?
+        </div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">Yes, do the urgent ones</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          Creating 3 renewal pack tasks. I'll notify you when they're ready for review.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <button class="mic-btn" title="Voice input">&#127908;</button>
+      <input class="chat-input" placeholder="Message BrokerOS..." />
+      <button class="send-btn">&uarr;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

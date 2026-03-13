@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Glassmorphism</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: #0c1222;
+    color: #c8cfd8;
+    height: 100vh;
+    overflow: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -300px; left: 100px;
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .shell { display: grid; grid-template-columns: 72px 1fr 400px; height: 100vh; position: relative; z-index: 1; }
+
+  /* Icon-only sidebar */
+  .sidebar {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; color: #fff;
+    margin-bottom: 24px;
+  }
+  .nav-btn {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+  .nav-btn.active {
+    background: rgba(6,182,212,0.15);
+    color: #06b6d4;
+  }
+  .nav-btn .badge {
+    position: absolute; top: 6px; right: 6px;
+    width: 8px; height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #0c1222;
+  }
+  .nav-spacer { flex: 1; }
+  .nav-avatar {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+    cursor: pointer;
+  }
+
+  /* Main */
+  .main { padding: 24px 28px; overflow-y: auto; }
+  .main-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .greeting { font-size: 26px; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px; }
+  .greeting span { background: linear-gradient(135deg, #06b6d4, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .date-text { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .header-pills { display: flex; gap: 8px; }
+  .pill {
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px; font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: #94a3b8;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+  }
+  .pill:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+  .pill.active { background: rgba(6,182,212,0.15); border-color: rgba(6,182,212,0.3); color: #06b6d4; }
+
+  /* Board */
+  .board { display: flex; gap: 16px; height: calc(100vh - 120px); }
+  .column { flex: 1; min-width: 220px; }
+  .column-header { margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .column-pip { width: 6px; height: 6px; border-radius: 3px; }
+  .column-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+  .column-count { font-size: 11px; color: #475569; }
+  .cards { display: flex; flex-direction: column; gap: 10px; }
+
+  .card {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .card:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .card-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+  .type-motor { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .type-home { background: rgba(16,185,129,0.15); color: #34d399; }
+  .type-commercial { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .type-claim { background: rgba(239,68,68,0.15); color: #f87171; }
+  .card-priority-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .card-title { font-size: 14px; font-weight: 600; color: #e2e8f0; line-height: 1.4; margin-bottom: 10px; }
+  .card-info { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; }
+  .card-info-sep { width: 1px; height: 12px; background: rgba(255,255,255,0.08); }
+  .card-assignee { width: 22px; height: 22px; border-radius: 8px; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #94a3b8; }
+
+  /* AI card */
+  .card.ai-active {
+    background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(139,92,246,0.08) 100%);
+    border-color: rgba(6,182,212,0.25);
+    position: relative;
+    overflow: hidden;
+  }
+  .card.ai-active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 200%; height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.05) 50%, transparent 100%);
+    animation: shimmer 2.5s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+  .ai-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #06b6d4; padding: 3px 10px; border-radius: 100px; background: rgba(6,182,212,0.15); }
+  .ai-dot { width: 6px; height: 6px; border-radius: 50%; background: #06b6d4; animation: pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+  .ai-step { font-size: 12px; color: #06b6d4; margin-top: 10px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 1; }
+
+  .card.review {
+    border-color: rgba(245,158,11,0.3);
+    background: rgba(245,158,11,0.05);
+  }
+  .review-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #f59e0b; padding: 3px 10px; border-radius: 100px; background: rgba(245,158,11,0.15); }
+
+  /* Chat */
+  .chat {
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .chat-ai-avatar {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .chat-header-text .chat-title { font-size: 15px; font-weight: 700; color: #f8fafc; }
+  .chat-header-text .chat-sub { font-size: 12px; color: #64748b; }
+
+  .chat-messages { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+  .msg { max-width: 88%; }
+  .msg-user { align-self: flex-end; }
+  .msg-user .msg-bubble {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: #fff;
+    border-radius: 20px 20px 4px 20px;
+    padding: 12px 18px;
+    font-size: 14px; line-height: 1.5;
+  }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .msg-bubble {
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #c8cfd8;
+    border-radius: 20px 20px 20px 4px;
+    padding: 12px 18px;
+    font-size: 14px; line-height: 1.5;
+  }
+
+  .chat-task-card {
+    background: rgba(6,182,212,0.06);
+    border: 1px solid rgba(6,182,212,0.2);
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 10px;
+  }
+  .chat-task-title { font-size: 14px; font-weight: 600; color: #f8fafc; margin-bottom: 8px; }
+  .chat-task-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+  .chat-task-row strong { color: #e2e8f0; font-weight: 500; }
+  .chat-task-progress { margin-top: 10px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .chat-task-progress-bar { height: 100%; background: linear-gradient(90deg, #06b6d4, #8b5cf6); border-radius: 2px; width: 65%; }
+  .chat-task-status { font-size: 11px; color: #06b6d4; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+
+  .chat-input-area {
+    padding: 20px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 12px 18px;
+    color: #e2e8f0;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    backdrop-filter: blur(10px);
+  }
+  .chat-input::placeholder { color: #475569; }
+  .chat-input:focus { border-color: rgba(6,182,212,0.4); }
+  .mic-btn {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #94a3b8; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; transition: all 0.2s; flex-shrink: 0;
+  }
+  .mic-btn:hover { background: rgba(6,182,212,0.1); color: #06b6d4; border-color: rgba(6,182,212,0.3); }
+  .send-btn {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+    border: none; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0; transition: all 0.2s;
+  }
+  .send-btn:hover { opacity: 0.9; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Icon sidebar -->
+  <nav class="sidebar">
+    <div class="logo-icon">B</div>
+    <button class="nav-btn active" title="Dashboard">&#9638;</button>
+    <button class="nav-btn" title="Clients">&#128101;</button>
+    <button class="nav-btn" title="Policies">&#128196;</button>
+    <button class="nav-btn" title="Claims">&#9889;<span class="badge"></span></button>
+    <button class="nav-btn" title="Commission">&#128176;</button>
+    <span class="nav-spacer"></span>
+    <button class="nav-btn" title="Settings">&#9881;</button>
+    <div style="margin-top:8px"><div class="nav-avatar">GM</div></div>
+  </nav>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="main-header">
+      <div>
+        <div class="greeting">Good morning, <span>Grant</span></div>
+        <div class="date-text">Wednesday, 12 March 2026</div>
+      </div>
+      <div class="header-pills">
+        <div class="pill active">All boards</div>
+        <div class="pill">Underwriting</div>
+        <div class="pill">Claims</div>
+        <div class="pill">General</div>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="column">
+        <div class="column-header">
+          <div class="column-pip" style="background:#64748b"></div>
+          <div class="column-title">To Do</div>
+          <div class="column-count">&middot; 3</div>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-top">
+              <span class="card-type type-commercial">Commercial</span>
+              <span class="card-priority-dot" style="background:#ef4444"></span>
+            </div>
+            <div class="card-title">Review renewal pack &mdash; Van der Merwe Family Trust</div>
+            <div class="card-info">
+              <span class="card-assignee">SP</span>
+              <span>Sarah Peters</span>
+              <span class="card-info-sep"></span>
+              <span>Due 18 Mar</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-top">
+              <span class="card-type type-motor">Fleet</span>
+              <span class="card-priority-dot" style="background:#f59e0b"></span>
+            </div>
+            <div class="card-title">Follow up premium arrears &mdash; Nkosi Transport</div>
+            <div class="card-info">
+              <span class="card-assignee">GM</span>
+              <span>Grant McDonogh</span>
+              <span class="card-info-sep"></span>
+              <span style="color:#ef4444">Overdue</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-top">
+              <span class="card-type type-home">Homeowners</span>
+              <span class="card-priority-dot" style="background:#10b981"></span>
+            </div>
+            <div class="card-title">Gap analysis for Botha residence</div>
+            <div class="card-info">
+              <span class="card-assignee">GM</span>
+              <span>Grant McDonogh</span>
+              <span class="card-info-sep"></span>
+              <span>Due 20 Mar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="column-header">
+          <div class="column-pip" style="background:#06b6d4"></div>
+          <div class="column-title">In Progress</div>
+          <div class="column-count">&middot; 2</div>
+        </div>
+        <div class="cards">
+          <div class="card ai-active">
+            <div class="card-top">
+              <span class="ai-badge"><span class="ai-dot"></span> AI Working</span>
+              <span class="card-priority-dot" style="background:#f59e0b"></span>
+            </div>
+            <div class="card-title">Add Toyota Hilux to J. Smith motor policy</div>
+            <div class="card-info">
+              <span class="card-assignee" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6); color:#fff; border:none;">AI</span>
+              <span>Santam &middot; SAN-MOT-12345</span>
+            </div>
+            <div class="ai-step"><span class="ai-dot"></span> Generating amendment request...</div>
+          </div>
+          <div class="card ai-active">
+            <div class="card-top">
+              <span class="ai-badge"><span class="ai-dot"></span> AI Working</span>
+            </div>
+            <div class="card-title">Generate ROA for Moosa renewal call</div>
+            <div class="card-info">
+              <span class="card-assignee" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6); color:#fff; border:none;">AI</span>
+              <span>Hollard &middot; HOL-HOM-9981</span>
+            </div>
+            <div class="ai-step"><span class="ai-dot"></span> Transcribing call recording...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="column-header">
+          <div class="column-pip" style="background:#f59e0b"></div>
+          <div class="column-title">Review</div>
+          <div class="column-count">&middot; 2</div>
+        </div>
+        <div class="cards">
+          <div class="card review">
+            <div class="card-top">
+              <span class="review-badge">&#9888; Review needed</span>
+            </div>
+            <div class="card-title">ROA ready &mdash; Dlamini comprehensive motor</div>
+            <div class="card-info">
+              <span class="card-assignee" style="background:linear-gradient(135deg,#06b6d4,#8b5cf6); color:#fff; border:none;">AI</span>
+              <span>AI-generated &middot; Bryte</span>
+            </div>
+          </div>
+          <div class="card review">
+            <div class="card-top">
+              <span class="review-badge">&#9888; Discrepancy</span>
+            </div>
+            <div class="card-title">Commission variance &mdash; Santam Feb statement</div>
+            <div class="card-info">
+              <span>R 2,340 &middot; 14 policies affected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="column-header">
+          <div class="column-pip" style="background:#10b981"></div>
+          <div class="column-title">Done</div>
+          <div class="column-count">&middot; 5</div>
+        </div>
+        <div class="cards">
+          <div class="card" style="opacity:0.5">
+            <div class="card-top"><span class="card-type type-claim">Claim</span></div>
+            <div class="card-title">FNOL submitted &mdash; Jacobs motor theft</div>
+            <div class="card-info"><span>Santam &middot; Completed today</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chat -->
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="chat-ai-avatar">&#9830;</div>
+      <div class="chat-header-text">
+        <div class="chat-title">BrokerOS</div>
+        <div class="chat-sub">Your AI assistant</div>
+      </div>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg msg-ai">
+        <div class="msg-bubble">Morning, Grant. You've got <strong>4 tasks</strong> in your queue and <strong>3 renewals</strong> due this week. The Nkosi premium follow-up is overdue &mdash; want me to draft a message?</div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">Add a Toyota Hilux 2024 to John Smith's motor policy, reg CA 123-456</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          On it. Found John's motor policy with Santam.
+          <div class="chat-task-card">
+            <div class="chat-task-title">Add Toyota Hilux to motor policy</div>
+            <div class="chat-task-row">&#128100; <strong>John Smith</strong></div>
+            <div class="chat-task-row">&#128196; <strong>SAN-MOT-12345</strong> &middot; Santam</div>
+            <div class="chat-task-row">&#128203; <strong>Underwriting</strong> board</div>
+            <div class="chat-task-progress"><div class="chat-task-progress-bar"></div></div>
+            <div class="chat-task-status"><span class="ai-dot"></span> Generating amendment request...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">Also generate the 3 urgent renewal packs</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          Creating renewal packs for:<br>
+          1. <strong>Williams</strong> &mdash; Homeowners (OMI)<br>
+          2. <strong>September</strong> &mdash; Motor (Santam)<br>
+          3. <strong>Du Plessis</strong> &mdash; Commercial (Bryte)<br><br>
+          I'll have them in your Review column shortly.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <button class="mic-btn">&#127908;</button>
+      <input class="chat-input" placeholder="Talk to your portfolio..." />
+      <button class="send-btn">&#8593;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

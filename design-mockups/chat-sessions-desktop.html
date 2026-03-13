@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Chat Sessions (Desktop)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0a0e17; color: #c8cfd8; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr 400px; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #3b82f6; }
+  .org-name { font-size: 12px; color: #64748b; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #94a3b8; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #3b82f6; color: #fff; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #e2e8f0; font-weight: 500; }
+  .user-info .role { color: #64748b; font-size: 11px; }
+
+  /* Main Content - showing a task board in background */
+  .main { padding: 24px; overflow-y: auto; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .main-title { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+  .board-placeholder {
+    display: flex; gap: 16px; height: calc(100vh - 120px); opacity: 0.4;
+  }
+  .col-placeholder {
+    flex: 1; min-width: 200px;
+  }
+  .col-head { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .card-ph {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .card-ph-title { font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+  .card-ph-meta { font-size: 11px; color: #475569; }
+
+  /* Chat Panel */
+  .chat {
+    background: #0d1220;
+    border-left: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Session Switcher Header */
+  .chat-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .chat-header-top {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .session-selector {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 6px 10px; border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .session-selector:hover { background: rgba(255,255,255,0.04); }
+  .session-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .session-icon.general { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .session-icon.task { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .session-icon.client { background: rgba(16,185,129,0.15); color: #10b981; }
+  .session-icon.policy { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+  .session-info { flex: 1; }
+  .session-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+  .session-scope { font-size: 11px; color: #64748b; }
+  .session-chevron { color: #64748b; font-size: 12px; }
+  .chat-header-actions { display: flex; gap: 4px; }
+  .chat-header-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: transparent; border: 1px solid rgba(255,255,255,0.06);
+    color: #64748b; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .chat-header-btn:hover { background: rgba(255,255,255,0.04); color: #94a3b8; }
+
+  /* Internal Only Banner */
+  .internal-banner {
+    display: none; /* hidden by default, shown when toggled */
+    padding: 6px 12px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Session Dropdown */
+  .session-dropdown {
+    position: absolute;
+    top: 52px; left: 12px; right: 12px;
+    background: #151d2e;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+    z-index: 100;
+    padding: 8px;
+    max-height: 440px;
+    overflow-y: auto;
+  }
+  .dropdown-section { padding: 8px 8px 4px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+  .dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .dropdown-item:hover { background: rgba(255,255,255,0.04); }
+  .dropdown-item.active { background: rgba(59,130,246,0.08); }
+  .dropdown-item-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .dropdown-item-info { flex: 1; min-width: 0; }
+  .dropdown-item-title { font-size: 13px; font-weight: 500; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dropdown-item-meta { font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 6px; }
+  .dropdown-item-time { font-size: 11px; color: #475569; flex-shrink: 0; }
+  .dropdown-new {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #3b82f6;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-top: 4px;
+  }
+  .dropdown-new:hover { background: rgba(59,130,246,0.08); }
+  .dropdown-search {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #e2e8f0;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+    font-family: inherit;
+    margin-bottom: 4px;
+  }
+  .dropdown-search::placeholder { color: #475569; }
+  .internal-tag {
+    font-size: 9px; font-weight: 600;
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* Chat Messages */
+  .chat-messages {
+    flex: 1; padding: 16px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .msg { max-width: 90%; }
+  .msg-user { align-self: flex-end; }
+  .msg-user .bubble {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 16px 16px 4px 16px;
+    padding: 10px 14px;
+    font-size: 14px; line-height: 1.5;
+  }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .bubble {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #c8cfd8;
+    border-radius: 16px 16px 16px 4px;
+    padding: 10px 14px;
+    font-size: 14px; line-height: 1.5;
+  }
+  .msg-ai .bubble strong { color: #e2e8f0; }
+
+  /* Handoff Card */
+  .handoff-card {
+    background: rgba(59,130,246,0.06);
+    border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 8px;
+  }
+  .handoff-title { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .handoff-meta { font-size: 12px; color: #64748b; margin-bottom: 10px; }
+  .handoff-actions { display: flex; gap: 8px; }
+  .handoff-btn {
+    padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .handoff-btn-primary { background: #3b82f6; color: #fff; }
+  .handoff-btn-primary:hover { background: #2563eb; }
+  .handoff-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+  .handoff-btn-ghost:hover { background: rgba(255,255,255,0.04); }
+
+  /* Handed off compact card */
+  .handedoff-card {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px; color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin: 4px 0;
+    align-self: center;
+    max-width: 100%;
+  }
+  .handedoff-card:hover { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.15); color: #94a3b8; }
+  .handedoff-icon { color: #3b82f6; }
+
+  /* Tool calls */
+  .tool-call { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; padding: 4px 0; }
+  .tool-call .check { color: #10b981; }
+
+  /* Inline task card */
+  .task-card {
+    background: rgba(59,130,246,0.06);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 8px;
+  }
+  .task-card-title { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+  .task-card-meta { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .task-progress { margin-top: 8px; height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .task-progress-bar { height: 100%; background: #3b82f6; border-radius: 2px; width: 65%; }
+  .task-status { font-size: 11px; color: #3b82f6; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
+  .ai-dot { width: 5px; height: 5px; border-radius: 50%; background: #3b82f6; animation: blink 1s infinite; }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  /* Chat Input */
+  .chat-input-area {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; gap: 8px; align-items: flex-end;
+  }
+  .mic-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    color: #94a3b8; cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .chat-input {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 9px 14px; color: #e2e8f0; font-size: 14px;
+    outline: none; font-family: inherit;
+  }
+  .chat-input::placeholder { color: #475569; }
+  .send-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #3b82f6; border: none; color: #fff; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
+  }
+
+  /* Context bar above input */
+  .context-bar {
+    padding: 6px 16px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #64748b;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .context-bar .scope-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(16,185,129,0.1);
+    color: #10b981;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+    <div class="nav-item active"><span class="nav-icon">&#9638;</span> Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">&#128101;</span> Clients</div>
+    <div class="nav-item"><span class="nav-icon">&#128196;</span> Policies</div>
+    <div class="nav-item"><span class="nav-icon">&#9889;</span> Claims <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="nav-icon">&#9881;</span> Settings</div>
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main (dimmed board in background) -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">Task Board</div>
+    </div>
+    <div class="board-placeholder">
+      <div class="col-placeholder">
+        <div class="col-head">To Do &middot; 4</div>
+        <div class="card-ph"><div class="card-ph-title">Review renewal pack</div><div class="card-ph-meta">Van der Merwe Trust &middot; Due 18 Mar</div></div>
+        <div class="card-ph"><div class="card-ph-title">Follow up arrears</div><div class="card-ph-meta">Nkosi Transport &middot; Overdue</div></div>
+      </div>
+      <div class="col-placeholder">
+        <div class="col-head">In Progress &middot; 3</div>
+        <div class="card-ph"><div class="card-ph-title">Add Toyota Hilux to motor</div><div class="card-ph-meta">J. Smith &middot; Santam</div></div>
+        <div class="card-ph"><div class="card-ph-title">Generate ROA for Moosa</div><div class="card-ph-meta">Hollard &middot; HOL-HOM-9981</div></div>
+      </div>
+      <div class="col-placeholder">
+        <div class="col-head">Review &middot; 2</div>
+        <div class="card-ph"><div class="card-ph-title">Commission discrepancy</div><div class="card-ph-meta">Santam Feb &middot; R 2,340</div></div>
+      </div>
+      <div class="col-placeholder">
+        <div class="col-head">Done &middot; 5</div>
+        <div class="card-ph"><div class="card-ph-title">FNOL — Jacobs theft</div><div class="card-ph-meta">Completed today</div></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chat Panel with Session Management -->
+  <aside class="chat">
+    <!-- Session Header -->
+    <div class="chat-header">
+      <div class="chat-header-top">
+        <div class="session-selector">
+          <div class="session-icon client">&#128101;</div>
+          <div class="session-info">
+            <div class="session-title">Van der Merwe Trust</div>
+            <div class="session-scope">Client &middot; 3 policies</div>
+          </div>
+          <span class="session-chevron">&#9660;</span>
+        </div>
+        <div class="chat-header-actions">
+          <button class="chat-header-btn" title="Mark Internal Only">&#128274;</button>
+          <button class="chat-header-btn" title="Summarize &amp; Close">&#9724;</button>
+          <button class="chat-header-btn" title="New chat">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Dropdown (shown) -->
+    <div class="session-dropdown">
+      <input class="dropdown-search" placeholder="Search sessions..." />
+
+      <div class="dropdown-section">Active</div>
+      <div class="dropdown-item active">
+        <div class="dropdown-item-icon session-icon client">&#128101;</div>
+        <div class="dropdown-item-info">
+          <div class="dropdown-item-title">Van der Merwe Trust</div>
+          <div class="dropdown-item-meta">Client &middot; Renewal discussion</div>
+        </div>
+        <span class="dropdown-item-time">now</span>
+      </div>
+      <div class="dropdown-item">
+        <div class="dropdown-item-icon session-icon general">&#128172;</div>
+        <div class="dropdown-item-info">
+          <div class="dropdown-item-title">General</div>
+          <div class="dropdown-item-meta">Added vehicle to J. Smith policy</div>
+        </div>
+        <span class="dropdown-item-time">2m</span>
+      </div>
+      <div class="dropdown-item">
+        <div class="dropdown-item-icon session-icon task">&#128203;</div>
+        <div class="dropdown-item-info">
+          <div class="dropdown-item-title">Add Toyota Hilux to motor</div>
+          <div class="dropdown-item-meta">Task &middot; John Smith &middot; Santam</div>
+        </div>
+        <span class="dropdown-item-time">5m</span>
+      </div>
+
+      <div class="dropdown-section">Today</div>
+      <div class="dropdown-item">
+        <div class="dropdown-item-icon session-icon policy">&#128196;</div>
+        <div class="dropdown-item-info">
+          <div class="dropdown-item-title">HOL-HOM-9981 Renewal</div>
+          <div class="dropdown-item-meta">Policy &middot; Moosa &middot; Hollard</div>
+        </div>
+        <span class="dropdown-item-time">1h</span>
+      </div>
+      <div class="dropdown-item">
+        <div class="dropdown-item-icon session-icon task">&#128203;</div>
+        <div class="dropdown-item-info">
+          <div class="dropdown-item-title">Commission reconciliation</div>
+          <div class="dropdown-item-meta"><span>Task &middot; Santam Feb</span> <span class="internal-tag">Internal</span></div>
+        </div>
+        <span class="dropdown-item-time">3h</span>
+      </div>
+
+      <div class="dropdown-section">This week</div>
+      <div class="dropdown-item">
+        <div class="dropdown-item-icon session-icon client">&#128101;</div>
+        <div class="dropdown-item-info">
+          <div class="dropdown-item-title">Dlamini — New business</div>
+          <div class="dropdown-item-meta">Client &middot; Closed &middot; Summary available</div>
+        </div>
+        <span class="dropdown-item-time">Mon</span>
+      </div>
+
+      <div class="dropdown-new">+ New chat session</div>
+    </div>
+
+    <!-- Chat Messages (behind dropdown - would be visible when dropdown closed) -->
+    <div class="chat-messages" style="opacity: 0.15;">
+      <div class="msg msg-ai">
+        <div class="bubble">I've loaded the Van der Merwe Family Trust profile. They have <strong>3 active policies</strong>: commercial property (Bryte), fleet motor (Santam), and liability (Hollard). The commercial renewal is due <strong>18 March</strong>. What would you like to discuss?</div>
+      </div>
+      <div class="msg msg-user">
+        <div class="bubble">Let's review the renewal — what are our options for the commercial property?</div>
+      </div>
+      <div class="msg msg-ai">
+        <div class="tool-call"><span class="check">&#10003;</span> Retrieved policy BRY-COM-4421</div>
+        <div class="tool-call"><span class="check">&#10003;</span> Pulled claims history (2 claims in 3 years)</div>
+        <div class="bubble">
+          Current commercial property cover with Bryte:<br><br>
+          &bull; Premium: <strong>R 245,000 p.a.</strong> (up 12% from last year)<br>
+          &bull; Cover: R 18.5M buildings, R 4.2M contents<br>
+          &bull; Claims: 2 in 3 years (R 180K total)<br>
+          &bull; Excess: R 25,000<br><br>
+          Given the 12% increase and clean recent history, I'd recommend remarketing. Want me to create a remarketing task and get quotes from Santam and Hollard?
+        </div>
+      </div>
+      <div class="msg msg-user">
+        <div class="bubble">Yes, remarket it. Also create a task to call the client before the renewal date.</div>
+      </div>
+      <div class="msg msg-ai">
+        <div class="bubble">
+          Done — two tasks created:
+          <div class="task-card" style="margin-bottom: 8px;">
+            <div class="task-card-title">Remarket commercial property — Van der Merwe Trust</div>
+            <div class="task-card-meta">Bryte &rarr; Santam, Hollard &middot; Underwriting board</div>
+            <div class="task-progress"><div class="task-progress-bar" style="width: 15%;"></div></div>
+            <div class="task-status"><span class="ai-dot"></span> Preparing quote requests...</div>
+          </div>
+          <div class="handoff-card">
+            <div class="handoff-title">&#128203; Handoff to task session?</div>
+            <div class="handoff-meta">I can continue the remarketing discussion in a dedicated task session, keeping this client chat focused.</div>
+            <div class="handoff-actions">
+              <button class="handoff-btn handoff-btn-primary">Hand off &rarr;</button>
+              <button class="handoff-btn handoff-btn-ghost">Keep here</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Context bar -->
+    <div class="context-bar" style="opacity: 0.15;">
+      <span>Chatting about</span>
+      <span class="scope-chip">&#128101; Van der Merwe Trust</span>
+      <span>&middot; ROA enabled</span>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area" style="opacity: 0.15;">
+      <button class="mic-btn">&#127908;</button>
+      <input class="chat-input" placeholder="Message about Van der Merwe Trust..." />
+      <button class="send-btn">&uarr;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

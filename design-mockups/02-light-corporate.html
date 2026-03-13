@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Light Corporate</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; background: #f8fafc; color: #334155; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 220px 1fr 380px; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo {
+    font-size: 20px; font-weight: 700; color: #0f172a; padding: 0 12px; margin-bottom: 4px;
+  }
+  .logo span { color: #0891b2; }
+  .org-name { font-size: 12px; color: #94a3b8; padding: 0 12px; margin-bottom: 28px; }
+
+  .nav-section { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; padding: 0 12px; margin: 16px 0 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 500;
+    color: #64748b; cursor: pointer; transition: all 0.15s;
+  }
+  .nav-item:hover { background: #f1f5f9; color: #334155; }
+  .nav-item.active { background: #0891b2; color: #fff; }
+  .nav-item.active svg { color: #fff; }
+  .nav-icon { width: 18px; height: 18px; color: #94a3b8; }
+  .nav-item.active .nav-icon { color: #fff; }
+  .nav-badge { margin-left: auto; background: #fee2e2; color: #dc2626; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+
+  .sidebar-footer { margin-top: auto; padding: 12px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 10px; background: #0891b2; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .user-info .name { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .user-info .role { font-size: 11px; color: #94a3b8; }
+
+  /* Main */
+  .main { padding: 28px 32px; overflow-y: auto; background: #f8fafc; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .main-title { font-size: 24px; font-weight: 700; color: #0f172a; }
+  .main-subtitle { font-size: 14px; color: #94a3b8; margin-top: 2px; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.15s; background: #fff; color: #334155; }
+  .btn:hover { background: #f1f5f9; }
+  .btn-primary { background: #0891b2; color: #fff; border-color: #0891b2; }
+  .btn-primary:hover { background: #0e7490; }
+  .search-input { padding: 8px 12px 8px 32px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; width: 200px; outline: none; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") 10px center no-repeat; }
+  .search-input:focus { border-color: #0891b2; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; }
+  .stat-label { font-size: 12px; color: #94a3b8; font-weight: 500; margin-bottom: 4px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: #0f172a; }
+  .stat-change { font-size: 12px; margin-top: 4px; }
+  .stat-up { color: #10b981; }
+  .stat-down { color: #ef4444; }
+
+  /* Board */
+  .board { display: flex; gap: 16px; height: calc(100vh - 260px); }
+  .column { flex: 1; min-width: 220px; }
+  .column-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .column-label { display: flex; align-items: center; gap: 8px; }
+  .column-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .column-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+  .column-count { background: #f1f5f9; color: #64748b; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+  .column-add { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px; }
+  .cards { display: flex; flex-direction: column; gap: 10px; }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); border-color: #cbd5e1; }
+  .card-priority { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .priority-high { background: #ef4444; }
+  .priority-medium { background: #f59e0b; }
+  .priority-low { background: #10b981; }
+  .card-title { font-size: 14px; font-weight: 500; color: #0f172a; margin-bottom: 8px; line-height: 1.4; }
+  .card-client { font-size: 12px; color: #64748b; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .card-tags { display: flex; gap: 4px; }
+  .tag { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+  .tag-motor { background: #ede9fe; color: #7c3aed; }
+  .tag-home { background: #dcfce7; color: #16a34a; }
+  .tag-commercial { background: #ffedd5; color: #ea580c; }
+  .tag-claim { background: #fee2e2; color: #dc2626; }
+  .card-date { font-size: 11px; color: #94a3b8; }
+
+  /* AI card */
+  .card.ai-active {
+    border: 2px solid #0891b2;
+    background: linear-gradient(135deg, #f0fdfa 0%, #fff 100%);
+  }
+  .ai-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #0891b2; font-weight: 500; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+  .ai-spinner { width: 14px; height: 14px; border: 2px solid #e0f2fe; border-top-color: #0891b2; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .card.review { border-left: 4px solid #f59e0b; }
+  .review-label { font-size: 11px; font-weight: 600; color: #d97706; background: #fef3c7; padding: 2px 8px; border-radius: 4px; }
+
+  /* Chat */
+  .chat {
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+  .chat-title { font-size: 15px; font-weight: 600; color: #0f172a; }
+  .chat-status { font-size: 12px; color: #10b981; display: flex; align-items: center; gap: 4px; }
+  .chat-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #fafbfc; }
+
+  .msg { max-width: 88%; }
+  .msg-user { align-self: flex-end; }
+  .msg-user .msg-bubble { background: #0891b2; color: #fff; border-radius: 18px 18px 4px 18px; padding: 10px 16px; font-size: 14px; line-height: 1.5; }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .msg-bubble { background: #fff; border: 1px solid #e2e8f0; color: #334155; border-radius: 18px 18px 18px 4px; padding: 10px 16px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+  .chat-task-card {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 10px;
+  }
+  .chat-task-title { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+  .chat-task-meta { font-size: 12px; color: #64748b; line-height: 1.6; }
+  .chat-task-status { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #0891b2; font-weight: 500; margin-top: 6px; }
+  .chat-task-status .ai-spinner { width: 12px; height: 12px; }
+
+  .chat-input-area { padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; align-items: flex-end; background: #fff; }
+  .chat-input {
+    flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 10px 14px; color: #0f172a; font-size: 14px; outline: none; resize: none; font-family: inherit;
+  }
+  .chat-input::placeholder { color: #94a3b8; }
+  .chat-input:focus { border-color: #0891b2; background: #fff; }
+  .mic-btn {
+    width: 40px; height: 40px; border-radius: 12px; background: #f8fafc; border: 1px solid #e2e8f0;
+    color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; transition: all 0.15s; flex-shrink: 0;
+  }
+  .mic-btn:hover { background: #f0fdfa; color: #0891b2; border-color: #0891b2; }
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 12px; background: #0891b2; border: none;
+    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; transition: all 0.15s;
+  }
+  .send-btn:hover { background: #0e7490; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+
+    <div class="nav-section">Main</div>
+    <div class="nav-item active"><span class="nav-icon">&#9638;</span> Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">&#128101;</span> Clients</div>
+    <div class="nav-item"><span class="nav-icon">&#128196;</span> Policies</div>
+
+    <div class="nav-section">Operations</div>
+    <div class="nav-item"><span class="nav-icon">&#9889;</span> Claims <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="nav-icon">&#128176;</span> Commission</div>
+    <div class="nav-item"><span class="nav-icon">&#9989;</span> Compliance</div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item"><span class="nav-icon">&#9881;</span> Settings</div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="main-header">
+      <div>
+        <div class="main-title">Good morning, Grant</div>
+        <div class="main-subtitle">Wednesday, 12 March 2026 &middot; 4 tasks need attention</div>
+      </div>
+      <div class="header-actions">
+        <input class="search-input" placeholder="Search tasks..." />
+        <button class="btn">&#9683; Filter</button>
+        <button class="btn btn-primary">+ New task</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Active Policies</div>
+        <div class="stat-value">247</div>
+        <div class="stat-change stat-up">+3 this week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Renewals This Month</div>
+        <div class="stat-value">12</div>
+        <div class="stat-change" style="color:#f59e0b">3 urgent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Open Claims</div>
+        <div class="stat-value">8</div>
+        <div class="stat-change stat-down">2 overdue</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Commission MTD</div>
+        <div class="stat-value">R 84k</div>
+        <div class="stat-change stat-up">+12% vs Feb</div>
+      </div>
+    </div>
+
+    <div class="board">
+      <div class="column">
+        <div class="column-header">
+          <div class="column-label">
+            <div class="column-dot" style="background:#94a3b8"></div>
+            <div class="column-title">To Do</div>
+            <div class="column-count">3</div>
+          </div>
+          <button class="column-add">+</button>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="card-title"><span class="card-priority priority-high"></span>Review renewal pack &mdash; Van der Merwe Trust</div>
+            <div class="card-client">&#128100; Sarah Peters &middot; Commercial property</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-commercial">Commercial</span></div>
+              <div class="card-date">Due 18 Mar</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-priority priority-medium"></span>Follow up premium arrears &mdash; Nkosi Transport</div>
+            <div class="card-client">&#128100; Grant McDonogh &middot; Fleet motor</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-motor">Fleet</span></div>
+              <div class="card-date" style="color:#ef4444">Overdue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="column-header">
+          <div class="column-label">
+            <div class="column-dot" style="background:#0891b2"></div>
+            <div class="column-title">In Progress</div>
+            <div class="column-count">2</div>
+          </div>
+        </div>
+        <div class="cards">
+          <div class="card ai-active">
+            <div class="card-title"><span class="card-priority priority-medium"></span>Add Toyota Hilux to J. Smith motor policy</div>
+            <div class="card-client">&#128100; John Smith &middot; SAN-MOT-12345</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-motor">Motor</span></div>
+              <div class="card-date">Today</div>
+            </div>
+            <div class="ai-status"><span class="ai-spinner"></span> Generating amendment request...</div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-priority priority-low"></span>Remarket Patel Body Corporate</div>
+            <div class="card-client">&#128100; Sarah Peters &middot; 12 units</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-commercial">Body Corp</span></div>
+              <div class="card-date">Due 25 Mar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="column-header">
+          <div class="column-label">
+            <div class="column-dot" style="background:#f59e0b"></div>
+            <div class="column-title">Review</div>
+            <div class="column-count">2</div>
+          </div>
+        </div>
+        <div class="cards">
+          <div class="card review">
+            <div class="card-title">ROA ready &mdash; Dlamini motor</div>
+            <div class="card-client">&#129302; AI-generated &middot; Bryte</div>
+            <div class="card-footer">
+              <span class="review-label">Review ROA</span>
+              <div class="card-date">Today</div>
+            </div>
+          </div>
+          <div class="card review">
+            <div class="card-title">Commission discrepancy &mdash; Santam Feb</div>
+            <div class="card-client">&#128176; R 2,340 variance &middot; 14 policies</div>
+            <div class="card-footer">
+              <span class="review-label">Needs review</span>
+              <div class="card-date">Yesterday</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="column-header">
+          <div class="column-label">
+            <div class="column-dot" style="background:#10b981"></div>
+            <div class="column-title">Done</div>
+            <div class="column-count">5</div>
+          </div>
+        </div>
+        <div class="cards">
+          <div class="card" style="opacity:0.65">
+            <div class="card-title">FNOL submitted &mdash; Jacobs motor theft</div>
+            <div class="card-client">&#128100; Grant McDonogh &middot; Santam</div>
+            <div class="card-footer">
+              <div class="card-tags"><span class="tag tag-claim">Claim</span></div>
+              <div class="card-date">Today</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="chat-title">BrokerOS Assistant</div>
+      <div class="chat-status"><span class="chat-status-dot"></span> Online</div>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg msg-ai">
+        <div class="msg-bubble">Good morning, Grant. You have <strong>4 tasks</strong> needing attention and <strong>3 urgent renewals</strong> this week. What would you like to work on?</div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">Add a Toyota Hilux 2024 to John Smith's motor policy, reg CA 123-456</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          I found John Smith's motor policy with Santam (SAN-MOT-12345). I'm creating an amendment task now.
+          <div class="chat-task-card">
+            <div class="chat-task-title">Add Toyota Hilux to motor policy</div>
+            <div class="chat-task-meta">
+              Client: John Smith<br>
+              Policy: SAN-MOT-12345 &middot; Santam<br>
+              Board: Underwriting
+            </div>
+            <div class="chat-task-status"><span class="ai-spinner"></span> Generating amendment...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">What's the status on the Jacobs theft claim?</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          The FNOL for <strong>Jacobs motor theft</strong> was submitted to Santam this morning. Claim ref: <strong>CLM-2026-0089</strong>. Status: <em>Submitted</em> &mdash; waiting for acknowledgement. I'll notify you when Santam responds.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <button class="mic-btn">&#127908;</button>
+      <input class="chat-input" placeholder="Ask anything about your portfolio..." />
+      <button class="send-btn">&#8593;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>
