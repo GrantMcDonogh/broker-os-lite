@@ -204,16 +204,18 @@ function ProfileTab({
         <div className={styles.formSectionDesc}>Your details as they appear in the system and on compliance documents.</div>
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>First Name</label>
+            <label className={styles.formLabel} htmlFor="settings-firstName">First Name</label>
             <input
+              id="settings-firstName"
               className={styles.formInput}
               value={form.firstName}
               onChange={e => onChange({ ...form, firstName: e.target.value })}
             />
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Last Name</label>
+            <label className={styles.formLabel} htmlFor="settings-lastName">Last Name</label>
             <input
+              id="settings-lastName"
               className={styles.formInput}
               value={form.lastName}
               onChange={e => onChange({ ...form, lastName: e.target.value })}
@@ -222,16 +224,18 @@ function ProfileTab({
         </div>
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Email Address</label>
+            <label className={styles.formLabel} htmlFor="settings-email">Email Address</label>
             <input
+              id="settings-email"
               className={styles.formInput}
               value={form.email}
               onChange={e => onChange({ ...form, email: e.target.value })}
             />
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Mobile Number</label>
+            <label className={styles.formLabel} htmlFor="settings-phone">Mobile Number</label>
             <input
+              id="settings-phone"
               className={styles.formInput}
               value={form.phone}
               onChange={e => onChange({ ...form, phone: e.target.value })}
@@ -240,16 +244,18 @@ function ProfileTab({
         </div>
         <div className={styles.formRow}>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>Role</label>
+            <label className={styles.formLabel} htmlFor="settings-role">Role</label>
             <input
+              id="settings-role"
               className={`${styles.formInput} ${styles.formInputReadonly}`}
               value={currentUser?.role || 'Key Individual'}
               readOnly
             />
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.formLabel}>FAIS Representative Number</label>
+            <label className={styles.formLabel} htmlFor="settings-faisNo">FAIS Representative Number</label>
             <input
+              id="settings-faisNo"
               className={styles.formInput}
               defaultValue="REP-20198"
             />

@@ -10,7 +10,7 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'test-results/html-report' }],
   ],
   use: {
-    baseURL: 'https://broker-os-lite-production.up.railway.app',
+    baseURL: process.env.BASE_URL || 'https://broker-os-lite-production.up.railway.app',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
     actionTimeout: 10000,
