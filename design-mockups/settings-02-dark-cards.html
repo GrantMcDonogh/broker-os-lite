@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Settings (Dark Cards — Team Management)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0a0e17; color: #c8cfd8; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #3b82f6; }
+  .org-name { font-size: 12px; color: #64748b; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #94a3b8; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #3b82f6; color: #0a0e17; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #0a0e17; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #e2e8f0; font-weight: 500; }
+  .user-info .role { color: #64748b; font-size: 11px; }
+
+  /* Main */
+  .main { overflow-y: auto; }
+
+  /* Top Tabs */
+  .settings-topbar {
+    background: #0d1220;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 20px 32px 0;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .settings-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+  }
+  .settings-title { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+  .role-indicator {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b;
+    background: rgba(255,255,255,0.03); padding: 6px 12px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .role-indicator .dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; }
+  .tabs {
+    display: flex; gap: 0;
+  }
+  .tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b;
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab:hover { color: #94a3b8; }
+  .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+  .tab .tab-badge {
+    font-size: 10px; background: rgba(59,130,246,0.15); color: #60a5fa;
+    padding: 1px 5px; border-radius: 4px; margin-left: 6px;
+  }
+  .tab .tab-lock { font-size: 10px; margin-left: 6px; opacity: 0.5; }
+
+  /* Content */
+  .content { padding: 32px; }
+
+  /* Team Header */
+  .team-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+  }
+  .team-stats { display: flex; gap: 24px; }
+  .stat-pill {
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+    background: rgba(255,255,255,0.03); padding: 8px 16px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .stat-pill .number { font-weight: 700; color: #f1f5f9; font-size: 16px; }
+  .stat-pill .label { color: #64748b; }
+
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: #3b82f6; color: #0a0e17; font-weight: 600; }
+  .btn-primary:hover { background: #60a5fa; }
+  .btn-ghost { background: rgba(255,255,255,0.04); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+
+  /* Member Cards */
+  .members-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+
+  .member-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.15s;
+  }
+  .member-card:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); }
+
+  .member-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+  .member-avatar {
+    width: 44px; height: 44px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 15px;
+    font-weight: 600; flex-shrink: 0;
+  }
+  .member-info { flex: 1; }
+  .member-name { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+  .member-email { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .member-role-tag {
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px;
+    display: inline-block; margin-top: 6px;
+  }
+  .role-owner { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .role-ki { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .role-rep { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .role-admin { background: rgba(251,146,60,0.15); color: #fb923c; }
+
+  .member-menu {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    background: transparent; color: #64748b; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.15s;
+  }
+  .member-menu:hover { background: rgba(255,255,255,0.06); color: #94a3b8; }
+
+  .member-details {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .detail-item { }
+  .detail-label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+  .detail-value { font-size: 13px; color: #c8cfd8; }
+  .detail-value.warn { color: #f59e0b; }
+  .detail-value.good { color: #4ade80; }
+
+  .member-compliance {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+  .compliance-chip {
+    font-size: 11px; padding: 4px 10px; border-radius: 6px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .compliance-ok { background: rgba(34,197,94,0.1); color: #4ade80; }
+  .compliance-warn { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  .compliance-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .compliance-ok .compliance-dot { background: #4ade80; }
+  .compliance-warn .compliance-dot { background: #f59e0b; }
+
+  /* Pending invites */
+  .invite-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .invite-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(59,130,246,0.1); display: flex;
+    align-items: center; justify-content: center; font-size: 20px;
+  }
+  .invite-info { flex: 1; }
+  .invite-email { font-size: 14px; color: #94a3b8; }
+  .invite-meta { font-size: 12px; color: #475569; margin-top: 2px; }
+  .invite-actions { display: flex; gap: 6px; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; }
+  .btn-sm-ghost { background: rgba(255,255,255,0.04); color: #94a3b8; }
+  .btn-sm-primary { background: #3b82f6; color: #0a0e17; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+    <nav>
+      <div class="nav-item"><span class="nav-icon">📊</span> Dashboard</div>
+      <div class="nav-item"><span class="nav-icon">👥</span> Clients</div>
+      <div class="nav-item"><span class="nav-icon">📄</span> Policies</div>
+      <div class="nav-item"><span class="nav-icon">⚡</span> Claims <span class="nav-badge">3</span></div>
+      <div class="nav-item active"><span class="nav-icon">⚙️</span> Settings</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="settings-topbar">
+      <div class="settings-header">
+        <div class="settings-title">Settings</div>
+        <div class="role-indicator">
+          <span class="dot"></span>
+          Viewing as <strong style="color: #60a5fa; margin-left: 4px;">Key Individual</strong>
+        </div>
+      </div>
+      <div class="tabs">
+        <div class="tab">Profile</div>
+        <div class="tab active">Team Members</div>
+        <div class="tab">Organisation</div>
+        <div class="tab">Insurers</div>
+        <div class="tab">Compliance</div>
+        <div class="tab">Notifications</div>
+        <div class="tab">Integrations <span class="tab-lock">🔒</span></div>
+        <div class="tab">Billing <span class="tab-lock">🔒</span></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Team Stats -->
+      <div class="team-header">
+        <div class="team-stats">
+          <div class="stat-pill">
+            <span class="number">5</span>
+            <span class="label">Active Members</span>
+          </div>
+          <div class="stat-pill">
+            <span class="number">1</span>
+            <span class="label">Pending Invite</span>
+          </div>
+          <div class="stat-pill">
+            <span class="number">3</span>
+            <span class="label">Representatives</span>
+          </div>
+        </div>
+        <button class="btn btn-primary">+ Invite Member</button>
+      </div>
+
+      <!-- Pending Invite -->
+      <div style="margin-bottom: 24px;">
+        <div style="font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Pending Invitations</div>
+        <div class="invite-card">
+          <div class="invite-icon">✉️</div>
+          <div class="invite-info">
+            <div class="invite-email">james.venter@mcdonoghbrokers.co.za</div>
+            <div class="invite-meta">Invited as Representative · Sent 2 days ago</div>
+          </div>
+          <div class="invite-actions">
+            <button class="btn-sm btn-sm-ghost">Cancel</button>
+            <button class="btn-sm btn-sm-primary">Resend</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Members -->
+      <div style="font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Active Team</div>
+      <div class="members-grid">
+        <!-- Owner -->
+        <div class="member-card">
+          <div class="member-top">
+            <div class="member-avatar" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: #1a0533;">GM</div>
+            <div class="member-info">
+              <div class="member-name">Grant McDonogh</div>
+              <div class="member-email">grant@mcdonoghbrokers.co.za</div>
+              <span class="member-role-tag role-ki">Key Individual</span>
+            </div>
+            <button class="member-menu">⋮</button>
+          </div>
+          <div class="member-details">
+            <div class="detail-item">
+              <div class="detail-label">FAIS Rep No.</div>
+              <div class="detail-value">REP-20198</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">RE1 Status</div>
+              <div class="detail-value good">Passed</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">CPD Progress</div>
+              <div class="detail-value good">18/20 hours</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Clients Managed</div>
+              <div class="detail-value">42</div>
+            </div>
+          </div>
+          <div class="member-compliance">
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> Fit & Proper</span>
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> RE1</span>
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> CPD on track</span>
+          </div>
+        </div>
+
+        <!-- Rep 1 -->
+        <div class="member-card">
+          <div class="member-top">
+            <div class="member-avatar" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16;">SP</div>
+            <div class="member-info">
+              <div class="member-name">Sarah Peters</div>
+              <div class="member-email">sarah@mcdonoghbrokers.co.za</div>
+              <span class="member-role-tag role-rep">Representative</span>
+            </div>
+            <button class="member-menu">⋮</button>
+          </div>
+          <div class="member-details">
+            <div class="detail-item">
+              <div class="detail-label">FAIS Rep No.</div>
+              <div class="detail-value">REP-20245</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">RE5 Status</div>
+              <div class="detail-value good">Passed</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">CPD Progress</div>
+              <div class="detail-value warn">8/20 hours</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Clients Managed</div>
+              <div class="detail-value">28</div>
+            </div>
+          </div>
+          <div class="member-compliance">
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> Fit & Proper</span>
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> RE5</span>
+            <span class="compliance-chip compliance-warn"><span class="compliance-dot"></span> CPD behind</span>
+          </div>
+        </div>
+
+        <!-- Rep 2 -->
+        <div class="member-card">
+          <div class="member-top">
+            <div class="member-avatar" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: #0a0e17;">TN</div>
+            <div class="member-info">
+              <div class="member-name">Thabo Nkosi</div>
+              <div class="member-email">thabo@mcdonoghbrokers.co.za</div>
+              <span class="member-role-tag role-rep">Representative</span>
+            </div>
+            <button class="member-menu">⋮</button>
+          </div>
+          <div class="member-details">
+            <div class="detail-item">
+              <div class="detail-label">FAIS Rep No.</div>
+              <div class="detail-value">REP-20301</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">RE5 Status</div>
+              <div class="detail-value good">Passed</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">CPD Progress</div>
+              <div class="detail-value good">15/20 hours</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Clients Managed</div>
+              <div class="detail-value">35</div>
+            </div>
+          </div>
+          <div class="member-compliance">
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> Fit & Proper</span>
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> RE5</span>
+            <span class="compliance-chip compliance-ok"><span class="compliance-dot"></span> CPD on track</span>
+          </div>
+        </div>
+
+        <!-- Admin -->
+        <div class="member-card">
+          <div class="member-top">
+            <div class="member-avatar" style="background: linear-gradient(135deg, #fb923c, #ea580c); color: #431407;">LB</div>
+            <div class="member-info">
+              <div class="member-name">Lisa Botha</div>
+              <div class="member-email">lisa@mcdonoghbrokers.co.za</div>
+              <span class="member-role-tag role-admin">Admin</span>
+            </div>
+            <button class="member-menu">⋮</button>
+          </div>
+          <div class="member-details">
+            <div class="detail-item">
+              <div class="detail-label">FAIS Status</div>
+              <div class="detail-value" style="color: #64748b;">Non-FAIS Staff</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Department</div>
+              <div class="detail-value">Back Office</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Responsibilities</div>
+              <div class="detail-value">Commission, Data</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Last Active</div>
+              <div class="detail-value">Today, 09:14</div>
+            </div>
+          </div>
+          <div class="member-compliance">
+            <span class="compliance-chip" style="background: rgba(100,116,139,0.1); color: #94a3b8;"><span class="compliance-dot" style="background: #94a3b8;"></span> No FAIS requirements</span>
+          </div>
+        </div>
+
+        <!-- Supervised Rep -->
+        <div class="member-card">
+          <div class="member-top">
+            <div class="member-avatar" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: #083344;">AM</div>
+            <div class="member-info">
+              <div class="member-name">Anele Moyo</div>
+              <div class="member-email">anele@mcdonoghbrokers.co.za</div>
+              <span class="member-role-tag role-rep">Representative</span>
+              <span style="font-size: 10px; color: #f59e0b; margin-left: 6px;">Supervised</span>
+            </div>
+            <button class="member-menu">⋮</button>
+          </div>
+          <div class="member-details">
+            <div class="detail-item">
+              <div class="detail-label">FAIS Rep No.</div>
+              <div class="detail-value">REP-20412</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">RE5 Status</div>
+              <div class="detail-value warn">Pending</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Supervisor</div>
+              <div class="detail-value">Grant McDonogh</div>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">Clients Managed</div>
+              <div class="detail-value">12</div>
+            </div>
+          </div>
+          <div class="member-compliance">
+            <span class="compliance-chip compliance-warn"><span class="compliance-dot"></span> Under supervision</span>
+            <span class="compliance-chip compliance-warn"><span class="compliance-dot"></span> RE5 pending</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

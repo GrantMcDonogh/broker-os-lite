@@ -7,6 +7,7 @@ import ChatPanel from './components/ChatPanel'
 import ClientsPage from './components/ClientsPage'
 import PoliciesPage from './components/PoliciesPage'
 import ClaimsPage from './components/ClaimsPage'
+import SettingsPage from './components/SettingsPage'
 import styles from './App.module.css'
 
 const ORG_ID = 'a0000000-0000-0000-0000-000000000001'
@@ -98,6 +99,9 @@ function App() {
       )}
       {activeNav === 'claims' && (
         <ClaimsPage orgId={ORG_ID} />
+      )}
+      {activeNav === 'settings' && (
+        <SettingsPage orgId={ORG_ID} currentUserId={USER_ID} />
       )}
     </div>
   )

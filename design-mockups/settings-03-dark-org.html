@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Settings (Dark Organisation & Integrations)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0a0e17; color: #c8cfd8; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 280px 1fr; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #3b82f6; }
+  .org-name { font-size: 12px; color: #64748b; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #94a3b8; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-badge { margin-left: auto; background: #3b82f6; color: #0a0e17; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #0a0e17; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #e2e8f0; font-weight: 500; }
+  .user-info .role { color: #64748b; font-size: 11px; }
+
+  /* Settings Nav */
+  .settings-nav {
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 0;
+    overflow-y: auto;
+  }
+  .settings-nav-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 8px;
+  }
+  .settings-nav-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .settings-nav-subtitle { font-size: 12px; color: #64748b; }
+  .settings-section-label {
+    font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 16px 20px 8px;
+  }
+  .settings-nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px; font-size: 14px; color: #94a3b8;
+    cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+  }
+  .settings-nav-item:hover { background: rgba(255,255,255,0.03); color: #e2e8f0; }
+  .settings-nav-item.active { background: rgba(59,130,246,0.06); color: #3b82f6; border-left-color: #3b82f6; }
+  .settings-nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .settings-nav-item .label { flex: 1; }
+  .settings-nav-item .role-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    background: rgba(251,146,60,0.15); color: #fb923c;
+  }
+  .settings-nav-item.locked { opacity: 0.4; cursor: not-allowed; }
+
+  /* Detail */
+  .settings-detail {
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+  .detail-header { margin-bottom: 32px; }
+  .detail-title { font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .detail-subtitle { font-size: 13px; color: #64748b; }
+
+  /* Form */
+  .form-section {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .form-section-title { font-size: 15px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+  .form-section-desc { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 500; color: #94a3b8; }
+  .form-input {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 14px;
+    font-family: inherit; outline: none; transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: #3b82f6; }
+  .form-textarea {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 14px;
+    font-family: inherit; outline: none; resize: vertical; min-height: 80px;
+  }
+  .form-select {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 14px;
+    font-family: inherit; outline: none; appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center;
+  }
+
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: #3b82f6; color: #0a0e17; font-weight: 600; }
+  .btn-primary:hover { background: #60a5fa; }
+  .btn-ghost { background: rgba(255,255,255,0.04); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+  .btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 24px; }
+
+  /* Integration cards */
+  .integration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .integration-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.15s;
+  }
+  .integration-card:hover { border-color: rgba(255,255,255,0.12); }
+  .integration-card.connected { border-color: rgba(34,197,94,0.2); }
+  .integration-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .integration-logo {
+    width: 44px; height: 44px; border-radius: 10px; display: flex;
+    align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+  }
+  .integration-info { flex: 1; }
+  .integration-name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
+  .integration-desc { font-size: 12px; color: #64748b; margin-top: 2px; line-height: 1.4; }
+  .integration-status {
+    font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+  }
+  .status-connected { background: rgba(34,197,94,0.1); color: #4ade80; }
+  .status-available { background: rgba(59,130,246,0.1); color: #60a5fa; }
+  .status-coming { background: rgba(100,116,139,0.1); color: #94a3b8; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .status-connected .status-dot { background: #4ade80; }
+  .status-available .status-dot { background: #60a5fa; }
+  .status-coming .status-dot { background: #94a3b8; }
+  .integration-action {
+    display: flex; gap: 8px; margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .btn-sm-primary { background: #3b82f6; color: #0a0e17; }
+  .btn-sm-ghost { background: rgba(255,255,255,0.04); color: #94a3b8; }
+  .btn-sm-ghost:hover { background: rgba(255,255,255,0.08); }
+  .btn-sm-danger { background: rgba(239,68,68,0.08); color: #f87171; }
+
+  /* Locked overlay */
+  .locked-overlay {
+    text-align: center; padding: 60px 40px;
+  }
+  .locked-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .locked-title { font-size: 18px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+  .locked-desc { font-size: 13px; color: #475569; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+    <nav>
+      <div class="nav-item"><span class="nav-icon">📊</span> Dashboard</div>
+      <div class="nav-item"><span class="nav-icon">👥</span> Clients</div>
+      <div class="nav-item"><span class="nav-icon">📄</span> Policies</div>
+      <div class="nav-item"><span class="nav-icon">⚡</span> Claims <span class="nav-badge">3</span></div>
+      <div class="nav-item active"><span class="nav-icon">⚙️</span> Settings</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Settings Nav -->
+  <div class="settings-nav">
+    <div class="settings-nav-header">
+      <div class="settings-nav-title">Settings</div>
+      <div class="settings-nav-subtitle">Manage your brokerage</div>
+    </div>
+
+    <div class="settings-section-label">Personal</div>
+    <div class="settings-nav-item">
+      <span class="icon">👤</span>
+      <span class="label">My Profile</span>
+    </div>
+    <div class="settings-nav-item">
+      <span class="icon">🔔</span>
+      <span class="label">Notifications</span>
+    </div>
+    <div class="settings-nav-item">
+      <span class="icon">🎨</span>
+      <span class="label">Appearance</span>
+    </div>
+
+    <div class="settings-section-label">Brokerage</div>
+    <div class="settings-nav-item active">
+      <span class="icon">🏢</span>
+      <span class="label">Organisation</span>
+      <span class="role-badge">KI+</span>
+    </div>
+    <div class="settings-nav-item">
+      <span class="icon">👥</span>
+      <span class="label">Team Members</span>
+      <span class="role-badge">KI+</span>
+    </div>
+    <div class="settings-nav-item">
+      <span class="icon">🏦</span>
+      <span class="label">Insurers</span>
+      <span class="role-badge">Admin+</span>
+    </div>
+
+    <div class="settings-section-label">Compliance</div>
+    <div class="settings-nav-item">
+      <span class="icon">📋</span>
+      <span class="label">FAIS & CPD</span>
+      <span class="role-badge">KI+</span>
+    </div>
+    <div class="settings-nav-item">
+      <span class="icon">🔒</span>
+      <span class="label">POPIA & Consent</span>
+      <span class="role-badge">KI+</span>
+    </div>
+
+    <div class="settings-section-label">System</div>
+    <div class="settings-nav-item">
+      <span class="icon">🔗</span>
+      <span class="label">Integrations</span>
+      <span class="role-badge">Owner</span>
+    </div>
+    <div class="settings-nav-item">
+      <span class="icon">🤖</span>
+      <span class="label">AI & Chat</span>
+      <span class="role-badge">KI+</span>
+    </div>
+    <div class="settings-nav-item locked">
+      <span class="icon">💳</span>
+      <span class="label">Billing</span>
+      <span class="role-badge">Owner</span>
+    </div>
+  </div>
+
+  <!-- Detail Panel: Organisation -->
+  <div class="settings-detail">
+    <div class="detail-header">
+      <div class="detail-title">Organisation</div>
+      <div class="detail-subtitle">Brokerage details, FSP registration, and compliance information</div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Brokerage Information</div>
+      <div class="form-section-desc">Your registered brokerage details as held with the FSCA.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Brokerage Name</label>
+          <input class="form-input" value="McDonogh Insurance Brokers (Pty) Ltd" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Trading As</label>
+          <input class="form-input" value="McDonogh Insurance Brokers" />
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label class="form-label">FSP Number</label>
+          <input class="form-input" value="FSP 12345" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Registration</label>
+          <input class="form-input" value="2015/123456/07" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">VAT Number</label>
+          <input class="form-input" value="4012345678" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Principal Officer</label>
+          <input class="form-input" value="Grant McDonogh" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Compliance Officer</label>
+          <input class="form-input" value="External — CompliServe (Pty) Ltd" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Contact & Address</div>
+      <div class="form-section-desc">Office address and primary contact details.</div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label class="form-label">Physical Address</label>
+          <textarea class="form-textarea">Unit 5, Willowbridge Centre
+Carl Cronjé Drive, Bellville
+Cape Town, 7530</textarea>
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" value="+27 21 914 5678" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" value="info@mcdonoghbrokers.co.za" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Website</label>
+          <input class="form-input" value="www.mcdonoghbrokers.co.za" />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Professional Indemnity Cover</div>
+      <div class="form-section-desc">PI insurance details — required by FSCA for all FSPs.</div>
+      <div class="form-row three">
+        <div class="form-group">
+          <label class="form-label">PI Insurer</label>
+          <input class="form-input" value="Guardrisk" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Policy Number</label>
+          <input class="form-input" value="PI-GR-2026-4478" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cover Amount</label>
+          <input class="form-input" value="R 5,000,000" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Renewal Date</label>
+          <input class="form-input" type="date" value="2026-09-01" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select">
+            <option selected>Active</option>
+            <option>Expired</option>
+            <option>Pending Renewal</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Integrations</div>
+      <div class="form-section-desc">Connect BrokerOS to external systems. Only the brokerage owner can modify these settings.</div>
+      <div class="integration-grid">
+        <!-- WhatsApp -->
+        <div class="integration-card connected">
+          <div class="integration-top">
+            <div class="integration-logo" style="background: rgba(37,211,102,0.1);">💬</div>
+            <div class="integration-info">
+              <div class="integration-name">WhatsApp Business</div>
+              <div class="integration-desc">Client communication via WhatsApp Business API</div>
+              <span class="integration-status status-connected"><span class="status-dot"></span> Connected</span>
+            </div>
+          </div>
+          <div class="integration-action">
+            <button class="btn-sm btn-sm-ghost">Configure</button>
+            <button class="btn-sm btn-sm-danger">Disconnect</button>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="integration-card connected">
+          <div class="integration-top">
+            <div class="integration-logo" style="background: rgba(59,130,246,0.1);">📧</div>
+            <div class="integration-info">
+              <div class="integration-name">Email (IMAP/SMTP)</div>
+              <div class="integration-desc">Inbound email parsing and outbound correspondence</div>
+              <span class="integration-status status-connected"><span class="status-dot"></span> Connected</span>
+            </div>
+          </div>
+          <div class="integration-action">
+            <button class="btn-sm btn-sm-ghost">Configure</button>
+            <button class="btn-sm btn-sm-danger">Disconnect</button>
+          </div>
+        </div>
+
+        <!-- Xero -->
+        <div class="integration-card">
+          <div class="integration-top">
+            <div class="integration-logo" style="background: rgba(59,130,246,0.1);">📊</div>
+            <div class="integration-info">
+              <div class="integration-name">Xero Accounting</div>
+              <div class="integration-desc">Sync commission and binder fee data to your accounting system</div>
+              <span class="integration-status status-available"><span class="status-dot"></span> Available</span>
+            </div>
+          </div>
+          <div class="integration-action">
+            <button class="btn-sm btn-sm-primary">Connect</button>
+          </div>
+        </div>
+
+        <!-- Santam iPartner -->
+        <div class="integration-card">
+          <div class="integration-top">
+            <div class="integration-logo" style="background: rgba(251,146,60,0.1);">🏦</div>
+            <div class="integration-info">
+              <div class="integration-name">Santam iPartner</div>
+              <div class="integration-desc">Policy data sync, claims submission, commission statements</div>
+              <span class="integration-status status-available"><span class="status-dot"></span> Available</span>
+            </div>
+          </div>
+          <div class="integration-action">
+            <button class="btn-sm btn-sm-primary">Connect</button>
+          </div>
+        </div>
+
+        <!-- Hollard -->
+        <div class="integration-card">
+          <div class="integration-top">
+            <div class="integration-logo" style="background: rgba(168,85,247,0.1);">🏦</div>
+            <div class="integration-info">
+              <div class="integration-name">Hollard Go</div>
+              <div class="integration-desc">Portal integration for Hollard policies and claims</div>
+              <span class="integration-status status-coming"><span class="status-dot"></span> Coming Soon</span>
+            </div>
+          </div>
+          <div class="integration-action">
+            <button class="btn-sm btn-sm-ghost" style="opacity: 0.5; cursor: not-allowed;">Notify Me</button>
+          </div>
+        </div>
+
+        <!-- FSCA -->
+        <div class="integration-card">
+          <div class="integration-top">
+            <div class="integration-logo" style="background: rgba(34,197,94,0.1);">🏛️</div>
+            <div class="integration-info">
+              <div class="integration-name">FSCA e-Services</div>
+              <div class="integration-desc">Automated compliance submissions and rep registration</div>
+              <span class="integration-status status-coming"><span class="status-dot"></span> Coming Soon</span>
+            </div>
+          </div>
+          <div class="integration-action">
+            <button class="btn-sm btn-sm-ghost" style="opacity: 0.5; cursor: not-allowed;">Notify Me</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section" style="border-color: rgba(239,68,68,0.15);">
+      <div class="form-section-title" style="color: #f87171;">Danger Zone</div>
+      <div class="form-section-desc">Irreversible actions. These require Owner role confirmation.</div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0;">
+        <div>
+          <div style="font-size: 14px; color: #e2e8f0; font-weight: 500;">Export All Data</div>
+          <div style="font-size: 12px; color: #64748b;">Download a complete export of all brokerage data (POPIA compliance)</div>
+        </div>
+        <button class="btn btn-ghost">Export</button>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.04);">
+        <div>
+          <div style="font-size: 14px; color: #e2e8f0; font-weight: 500;">Delete Organisation</div>
+          <div style="font-size: 12px; color: #64748b;">Permanently delete this brokerage and all associated data</div>
+        </div>
+        <button class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-primary">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
