@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Policies</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0e17;
+    color: #c8cfd8;
+    display: flex;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.5px;
+  }
+  .sidebar-logo span { color: #3b82f6; }
+  .sidebar-org {
+    padding: 0 20px 24px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .sidebar-nav { flex: 1; padding: 0 12px; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    text-decoration: none;
+    position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #c8cfd8; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; height: 20px; opacity: 0.6; display: flex; align-items: center; justify-content: center; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge {
+    margin-left: auto;
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 10px;
+  }
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sidebar-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .sidebar-user-name { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+  .sidebar-user-role { font-size: 11px; color: #64748b; }
+
+  /* ── Policy List Panel ── */
+  .policy-list-panel {
+    width: 320px;
+    min-width: 320px;
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  .policy-list-header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .policy-list-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 12px;
+  }
+  .search-box {
+    position: relative;
+  }
+  .search-box input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 9px 12px 9px 36px;
+    color: #f1f5f9;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-box input::placeholder { color: #64748b; }
+  .search-box input:focus { border-color: rgba(59,130,246,0.4); }
+  .search-box svg {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: #64748b;
+  }
+  .policy-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .policy-list::-webkit-scrollbar { width: 4px; }
+  .policy-list::-webkit-scrollbar-track { background: transparent; }
+  .policy-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+  .policy-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.12s;
+    border-left: 3px solid transparent;
+  }
+  .policy-item:hover { background: rgba(255,255,255,0.03); }
+  .policy-item.selected {
+    background: rgba(59,130,246,0.1);
+    border-left-color: #3b82f6;
+  }
+  .policy-type-indicator {
+    width: 4px;
+    height: 32px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .policy-type-indicator.commercial { background: #3b82f6; }
+  .policy-type-indicator.fleet { background: #c084fc; }
+  .policy-type-indicator.liability { background: #4ade80; }
+  .policy-type-indicator.motor { background: #c084fc; }
+  .policy-type-indicator.property { background: #f59e0b; }
+  .policy-item-info { flex: 1; min-width: 0; }
+  .policy-item-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: 0.02em;
+  }
+  .policy-item-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+  .policy-item-premium {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Detail Panel ── */
+  .detail-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .detail-panel::-webkit-scrollbar { width: 6px; }
+  .detail-panel::-webkit-scrollbar-track { background: transparent; }
+  .detail-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+  .detail-header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .detail-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+  }
+  .detail-header-info { flex: 1; }
+  .detail-header-info h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .type-badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(59,130,246,0.12);
+    color: #60a5fa;
+  }
+  .insurer-badge {
+    font-size: 13px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .insurer-badge span { color: #64748b; }
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #c8cfd8;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
+  .btn-primary {
+    background: #3b82f6;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #2563eb; }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    padding: 0 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .tab-item {
+    padding: 14px 16px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab-item:hover { color: #94a3b8; }
+  .tab-item.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+
+  /* ── Overview Content ── */
+  .detail-content {
+    padding: 24px 32px 40px;
+    flex: 1;
+  }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.5px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+  }
+
+  /* ── Details Grid ── */
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .details-row {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .details-row:nth-last-child(-n+2) { border-bottom: none; }
+  .details-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .details-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #f1f5f9;
+  }
+  .details-value.urgent {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  /* ── Activity Timeline ── */
+  .activity-list {
+    position: relative;
+    padding-left: 24px;
+  }
+  .activity-list::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 1px;
+  }
+  .activity-item {
+    position: relative;
+    padding: 0 0 20px 0;
+  }
+  .activity-item:last-child { padding-bottom: 0; }
+  .activity-item::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #3b82f6;
+  }
+  .activity-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #f1f5f9;
+    margin-bottom: 2px;
+  }
+  .activity-meta {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .activity-meta span { color: #94a3b8; }
+
+  /* ── Avatar Colors ── */
+  .av-blue { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+  .av-green { background: linear-gradient(135deg, #10b981, #059669); }
+  .av-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+  .av-amber { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .av-rose { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+  .av-teal { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+  .av-indigo { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+  .av-cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+  .av-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+  .av-slate { background: linear-gradient(135deg, #64748b, #475569); }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">Broker<span>OS</span></div>
+  <div class="sidebar-org">McDonogh Insurance Brokers</div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg></div>
+      Dashboard
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg></div>
+      Clients
+    </a>
+    <a class="nav-item active" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg></div>
+      Policies
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+      Claims
+      <span class="nav-badge">3</span>
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg></div>
+      Commission
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg></div>
+      Settings
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-avatar">GM</div>
+    <div>
+      <div class="sidebar-user-name">Grant McDonogh</div>
+      <div class="sidebar-user-role">Key Individual</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Policy List Panel ── -->
+<div class="policy-list-panel">
+  <div class="policy-list-header">
+    <h2>Policies</h2>
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Search policies...">
+    </div>
+  </div>
+  <div class="policy-list">
+    <div class="policy-item selected">
+      <div class="policy-type-indicator commercial"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">BRY-COM-4421</div>
+        <div class="policy-item-sub">Van der Merwe Trust</div>
+      </div>
+      <div class="policy-item-premium">R 245K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator fleet"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">SAN-FLT-7782</div>
+        <div class="policy-item-sub">Van der Merwe Trust</div>
+      </div>
+      <div class="policy-item-premium">R 180K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator liability"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">HOL-LIA-3310</div>
+        <div class="policy-item-sub">Van der Merwe Trust</div>
+      </div>
+      <div class="policy-item-premium">R 45K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator motor"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">SAN-MOT-1156</div>
+        <div class="policy-item-sub">John Smith</div>
+      </div>
+      <div class="policy-item-premium">R 28K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator commercial"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">BRY-COM-8834</div>
+        <div class="policy-item-sub">Nkosi Transport</div>
+      </div>
+      <div class="policy-item-premium">R 320K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator fleet"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">SAN-FLT-9021</div>
+        <div class="policy-item-sub">Nkosi Transport</div>
+      </div>
+      <div class="policy-item-premium">R 210K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator liability"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">HOL-LIA-5567</div>
+        <div class="policy-item-sub">Nkosi Transport</div>
+      </div>
+      <div class="policy-item-premium">R 85K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator property"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">OLD-PRP-2241</div>
+        <div class="policy-item-sub">Patel Body Corp</div>
+      </div>
+      <div class="policy-item-premium">R 65K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator motor"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">DIS-MOT-4490</div>
+        <div class="policy-item-sub">Jacobs Family</div>
+      </div>
+      <div class="policy-item-premium">R 12K</div>
+    </div>
+    <div class="policy-item">
+      <div class="policy-type-indicator property"></div>
+      <div class="policy-item-info">
+        <div class="policy-item-number">OLD-PRP-6612</div>
+        <div class="policy-item-sub">Williams Family</div>
+      </div>
+      <div class="policy-item-premium">R 12K</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail Panel ── -->
+<div class="detail-panel">
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="detail-avatar av-blue">
+      <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+    </div>
+    <div class="detail-header-info">
+      <h1>BRY-COM-4421</h1>
+      <div class="detail-meta">
+        <span class="type-badge">Commercial Property</span>
+        <span class="insurer-badge">Bryte</span>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <button class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+        Edit
+      </button>
+      <button class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+        Renew
+      </button>
+      <button class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
+        Chat
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <div class="tab-item active">Overview</div>
+    <div class="tab-item">Coverage</div>
+    <div class="tab-item">Claims</div>
+    <div class="tab-item">Documents</div>
+    <div class="tab-item">Activity</div>
+  </div>
+
+  <!-- Content -->
+  <div class="detail-content">
+    <!-- Stat Cards -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-label">Annual Premium</div>
+        <div class="stat-value">R 245,000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sum Insured</div>
+        <div class="stat-value">R 15,000,000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Excess</div>
+        <div class="stat-value">R 25,000</div>
+      </div>
+    </div>
+
+    <!-- Policy Details -->
+    <div class="section-title">Policy Details</div>
+    <div class="details-grid">
+      <div class="details-row">
+        <div class="details-label">Policy Number</div>
+        <div class="details-value">BRY-COM-4421</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Client</div>
+        <div class="details-value">Van der Merwe Family Trust</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Insurer</div>
+        <div class="details-value">Bryte Insurance</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Type</div>
+        <div class="details-value">Commercial Property</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Inception Date</div>
+        <div class="details-value">18 Mar 2024</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Renewal Date</div>
+        <div class="details-value urgent">18 Mar 2026</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Payment</div>
+        <div class="details-value">Monthly Debit Order</div>
+      </div>
+      <div class="details-row">
+        <div class="details-label">Commission</div>
+        <div class="details-value">15%</div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="section-title">Recent Activity</div>
+    <div class="activity-list">
+      <div class="activity-item">
+        <div class="activity-title">Renewal quote requested from Bryte</div>
+        <div class="activity-meta">2 days ago <span>&middot;</span> by Grant McDonogh</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-title">Premium adjustment processed</div>
+        <div class="activity-meta">1 week ago <span>&middot;</span> R 245,000 &rarr; R 245,000</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-title">Annual review completed</div>
+        <div class="activity-meta">2 weeks ago <span>&middot;</span> by Sarah Peters</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-title">Claim settled &mdash; water damage</div>
+        <div class="activity-meta">1 month ago <span>&middot;</span> R 180,000</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

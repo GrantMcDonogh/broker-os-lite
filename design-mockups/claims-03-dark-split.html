@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Claims</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0e17;
+    color: #c8cfd8;
+    display: flex;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: -0.5px;
+  }
+  .sidebar-logo span { color: #3b82f6; }
+  .sidebar-org {
+    padding: 0 20px 24px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .sidebar-nav { flex: 1; padding: 0 12px; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    text-decoration: none;
+    position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #c8cfd8; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; height: 20px; opacity: 0.6; display: flex; align-items: center; justify-content: center; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge {
+    margin-left: auto;
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 10px;
+  }
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sidebar-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .sidebar-user-name { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+  .sidebar-user-role { font-size: 11px; color: #64748b; }
+
+  /* ── Claims List Panel ── */
+  .claims-list-panel {
+    width: 340px;
+    min-width: 340px;
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  .claims-list-header {
+    padding: 20px 16px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .claims-list-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .claims-list-title-row h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .count-badge {
+    background: rgba(255,255,255,0.06);
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 10px;
+  }
+  .search-box {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .search-box input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 9px 12px 9px 36px;
+    color: #f1f5f9;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-box input::placeholder { color: #64748b; }
+  .search-box input:focus { border-color: rgba(59,130,246,0.4); }
+  .search-box svg {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: #64748b;
+  }
+  .filter-tabs {
+    display: flex;
+    gap: 0;
+  }
+  .filter-tab {
+    flex: 1;
+    padding: 7px 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .filter-tab:hover { color: #94a3b8; }
+  .filter-tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+  .claims-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .claims-list::-webkit-scrollbar { width: 4px; }
+  .claims-list::-webkit-scrollbar-track { background: transparent; }
+  .claims-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+  .claim-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.12s;
+    border-left: 3px solid transparent;
+  }
+  .claim-item:hover { background: rgba(255,255,255,0.03); }
+  .claim-item.selected {
+    background: rgba(59,130,246,0.1);
+    border-left-color: #3b82f6;
+  }
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .dot-amber { background: #f59e0b; }
+  .dot-blue { background: #3b82f6; }
+  .dot-green { background: #22c55e; }
+  .dot-red { background: #ef4444; }
+  .claim-item-info { flex: 1; min-width: 0; }
+  .claim-item-number {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f1f5f9;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: 0.02em;
+  }
+  .claim-item-client {
+    font-size: 14px;
+    font-weight: 500;
+    color: #f1f5f9;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .claim-item-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .claim-item-date {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Detail Panel ── */
+  .detail-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .detail-panel::-webkit-scrollbar { width: 6px; }
+  .detail-panel::-webkit-scrollbar-track { background: transparent; }
+  .detail-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+  .detail-header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .detail-header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .detail-claim-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #f1f5f9;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: -0.3px;
+  }
+  .detail-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .badge {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge-blue { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .badge-red { background: rgba(239,68,68,0.12); color: #f87171; }
+  .detail-client-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #c8cfd8;
+    margin-top: 6px;
+  }
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #c8cfd8;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
+  .btn-primary {
+    background: #3b82f6;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #2563eb; }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    padding: 0 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .tab-item {
+    padding: 14px 16px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab-item:hover { color: #94a3b8; }
+  .tab-item.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+
+  /* ── Detail Content ── */
+  .detail-content {
+    padding: 24px 32px 40px;
+    flex: 1;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+  }
+
+  .info-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 32px;
+  }
+  .info-item {}
+  .info-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .info-value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #f1f5f9;
+  }
+  .info-value.large {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .info-value .assigned-avatar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mini-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  /* ── Description ── */
+  .description-text {
+    font-size: 14px;
+    color: #c8cfd8;
+    line-height: 1.7;
+  }
+
+  /* ── Checklist ── */
+  .checklist-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .checklist-progress-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+  }
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .checklist-item:last-of-type { border-bottom: none; }
+  .check-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .check-icon.done {
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+  }
+  .check-icon.pending {
+    border: 2px solid rgba(255,255,255,0.12);
+    background: transparent;
+  }
+  .check-icon svg { width: 12px; height: 12px; }
+  .checklist-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #f1f5f9;
+  }
+  .checklist-label.muted {
+    color: #94a3b8;
+  }
+  .progress-bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #3b82f6;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  /* ── Timeline ── */
+  .timeline {
+    position: relative;
+    padding-left: 24px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 1px;
+  }
+  .timeline-item {
+    position: relative;
+    padding: 0 0 20px 0;
+  }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #3b82f6;
+  }
+  .timeline-date {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 2px;
+  }
+  .timeline-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #f1f5f9;
+    margin-bottom: 2px;
+  }
+  .timeline-meta {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .timeline-meta span { color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">Broker<span>OS</span></div>
+  <div class="sidebar-org">McDonogh Insurance Brokers</div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg></div>
+      Dashboard
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg></div>
+      Clients
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg></div>
+      Policies
+    </a>
+    <a class="nav-item active" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+      Claims
+      <span class="nav-badge">3</span>
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg></div>
+      Commission
+    </a>
+    <a class="nav-item" href="#">
+      <div class="nav-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg></div>
+      Settings
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-avatar">GM</div>
+    <div>
+      <div class="sidebar-user-name">Grant McDonogh</div>
+      <div class="sidebar-user-role">Key Individual</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── Claims List Panel ── -->
+<div class="claims-list-panel">
+  <div class="claims-list-header">
+    <div class="claims-list-title-row">
+      <h2>Claims</h2>
+      <span class="count-badge">8</span>
+    </div>
+    <div class="search-box">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" placeholder="Search claims...">
+    </div>
+    <div class="filter-tabs">
+      <div class="filter-tab active">All</div>
+      <div class="filter-tab">Open</div>
+      <div class="filter-tab">In Progress</div>
+      <div class="filter-tab">Settled</div>
+    </div>
+  </div>
+  <div class="claims-list">
+    <!-- CLM-2026-001 — SELECTED -->
+    <div class="claim-item selected">
+      <div class="status-dot dot-blue"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-001</div>
+        <div class="claim-item-client">Jacobs Family</div>
+        <div class="claim-item-sub">Motor Theft &middot; R 280,000</div>
+      </div>
+      <div class="claim-item-date">10 Mar</div>
+    </div>
+    <!-- CLM-2026-002 -->
+    <div class="claim-item">
+      <div class="status-dot dot-amber"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-002</div>
+        <div class="claim-item-client">Botha Family</div>
+        <div class="claim-item-sub">Water Damage &middot; R 45,000</div>
+      </div>
+      <div class="claim-item-date">08 Mar</div>
+    </div>
+    <!-- CLM-2026-003 -->
+    <div class="claim-item">
+      <div class="status-dot dot-amber"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-003</div>
+        <div class="claim-item-client">Van der Merwe Trust</div>
+        <div class="claim-item-sub">Fire Damage &middot; R 180,000</div>
+      </div>
+      <div class="claim-item-date">05 Mar</div>
+    </div>
+    <!-- CLM-2026-004 -->
+    <div class="claim-item">
+      <div class="status-dot dot-blue"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-004</div>
+        <div class="claim-item-client">Nkosi Transport</div>
+        <div class="claim-item-sub">Vehicle Collision &middot; R 120,000</div>
+      </div>
+      <div class="claim-item-date">28 Feb</div>
+    </div>
+    <!-- CLM-2026-005 -->
+    <div class="claim-item">
+      <div class="status-dot dot-green"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-005</div>
+        <div class="claim-item-client">Dlamini Family</div>
+        <div class="claim-item-sub">Windscreen &middot; R 8,500</div>
+      </div>
+      <div class="claim-item-date">25 Feb</div>
+    </div>
+    <!-- CLM-2026-006 -->
+    <div class="claim-item">
+      <div class="status-dot dot-green"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-006</div>
+        <div class="claim-item-client">Williams Family</div>
+        <div class="claim-item-sub">Burst Geyser &middot; R 22,000</div>
+      </div>
+      <div class="claim-item-date">20 Feb</div>
+    </div>
+    <!-- CLM-2026-007 -->
+    <div class="claim-item">
+      <div class="status-dot dot-red"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-007</div>
+        <div class="claim-item-client">Patel Body Corp</div>
+        <div class="claim-item-sub">Liability &middot; R 350,000</div>
+      </div>
+      <div class="claim-item-date">15 Feb</div>
+    </div>
+    <!-- CLM-2026-008 -->
+    <div class="claim-item">
+      <div class="status-dot dot-blue"></div>
+      <div class="claim-item-info">
+        <div class="claim-item-number">CLM-2026-008</div>
+        <div class="claim-item-client">Moosa Family</div>
+        <div class="claim-item-sub">Theft &middot; R 65,000</div>
+      </div>
+      <div class="claim-item-date">10 Feb</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail Panel ── -->
+<div class="detail-panel">
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="detail-header-top">
+      <div>
+        <div class="detail-claim-number">CLM-2026-001</div>
+        <div class="detail-badges">
+          <span class="badge badge-blue">Submitted</span>
+          <span class="badge badge-red">High Value</span>
+        </div>
+        <div class="detail-client-name">Jacobs Family</div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          Update Status
+        </button>
+        <button class="btn btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+          Assign
+        </button>
+        <button class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
+          Contact Client
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <div class="tab-item active">Details</div>
+    <div class="tab-item">Documents</div>
+    <div class="tab-item">Timeline</div>
+    <div class="tab-item">Notes</div>
+  </div>
+
+  <!-- Content -->
+  <div class="detail-content">
+
+    <!-- Claim Information -->
+    <div class="section-title">Claim Information</div>
+    <div class="info-card">
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Type</div>
+          <div class="info-value">Motor Vehicle Theft</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Date Filed</div>
+          <div class="info-value">10 March 2026</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Date of Incident</div>
+          <div class="info-value">08 March 2026</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Amount Claimed</div>
+          <div class="info-value large">R 280,000</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Policy</div>
+          <div class="info-value" style="color: #94a3b8; font-style: italic;">Not linked</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Insurer</div>
+          <div class="info-value">Santam</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Assigned To</div>
+          <div class="info-value">
+            <span class="assigned-avatar">
+              <span class="mini-avatar">GM</span>
+              Grant McDonogh
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="section-title">Description</div>
+    <div class="info-card">
+      <div class="description-text">
+        Toyota Corolla 2022 reported stolen from driveway at residential address in Claremont, Cape Town. Vehicle was locked with alarm activated. Police case number: CAS 2026/03/001234. Client reported within 24 hours of discovery.
+      </div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="section-title">
+      <div class="checklist-header">
+        <span>Checklist</span>
+        <span class="checklist-progress-text">2 of 5 complete</span>
+      </div>
+    </div>
+    <div class="info-card">
+      <div class="checklist-item">
+        <div class="check-icon done">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="checklist-label">FNOL submitted</span>
+      </div>
+      <div class="checklist-item">
+        <div class="check-icon done">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="checklist-label">Police report obtained</span>
+      </div>
+      <div class="checklist-item">
+        <div class="check-icon pending"></div>
+        <span class="checklist-label muted">Vehicle tracking report requested</span>
+      </div>
+      <div class="checklist-item">
+        <div class="check-icon pending"></div>
+        <span class="checklist-label muted">Assessment scheduled</span>
+      </div>
+      <div class="checklist-item">
+        <div class="check-icon pending"></div>
+        <span class="checklist-label muted">Supporting documents uploaded</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" style="width: 40%;"></div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section-title" style="margin-top: 8px;">Timeline</div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-date">10 Mar 2026</div>
+        <div class="timeline-title">Claim submitted via BrokerOS</div>
+        <div class="timeline-meta">by <span>Grant McDonogh</span></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">10 Mar 2026</div>
+        <div class="timeline-title">FNOL sent to Santam</div>
+        <div class="timeline-meta">by <span>AI</span></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">09 Mar 2026</div>
+        <div class="timeline-title">Police report uploaded</div>
+        <div class="timeline-meta">by <span>Grant McDonogh</span></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">08 Mar 2026</div>
+        <div class="timeline-title">Incident reported by client</div>
+        <div class="timeline-meta">via <span>phone</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

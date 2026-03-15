@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "test": "npx playwright test",
+    "test:dashboard": "npx playwright test e2e/dashboard.spec.ts",
+    "test:navigation": "npx playwright test e2e/navigation.spec.ts",
+    "test:clients": "npx playwright test e2e/clients.spec.ts",
+    "test:policies": "npx playwright test e2e/policies.spec.ts",
+    "test:claims": "npx playwright test e2e/claims.spec.ts",
+    "test:cross": "npx playwright test e2e/cross-cutting.spec.ts",
+    "test:report": "npx playwright show-report test-results/html-report",
+    "test:api": "cd backend && npm test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.58.2"
+  }
+}

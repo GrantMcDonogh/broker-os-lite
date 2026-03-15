@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Claims</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0a0e17; color: #c8cfd8; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr 380px; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #3b82f6; }
+  .org-name { font-size: 12px; color: #64748b; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #94a3b8; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #3b82f6; color: #0a0e17; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #0a0e17; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #e2e8f0; font-weight: 500; }
+  .user-info .role { color: #64748b; font-size: 11px; }
+
+  /* Main Content */
+  .main { padding: 24px; overflow-y: auto; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .main-title { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost { background: rgba(255,255,255,0.04); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+  .btn-primary { background: #3b82f6; color: #0a0e17; font-weight: 600; }
+  .btn-primary:hover { background: #60a5fa; }
+
+  .search-input {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 14px 8px 36px;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    width: 220px;
+    transition: border-color 0.15s;
+  }
+  .search-input::placeholder { color: #475569; }
+  .search-input:focus { border-color: rgba(59,130,246,0.3); }
+  .search-wrapper { position: relative; }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #475569;
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .filter-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    transition: border-color 0.15s;
+  }
+  .filter-select:focus { border-color: rgba(59,130,246,0.3); }
+  .filter-select option { background: #0d1220; color: #c8cfd8; }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat-card.accent-red { border-left: 3px solid #ef4444; }
+  .stat-label { font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 500; }
+  .stat-value { font-size: 24px; font-weight: 700; color: #f1f5f9; }
+
+  /* Table */
+  .table-container {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+  tbody tr { transition: background 0.1s; cursor: pointer; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 13px;
+    color: #c8cfd8;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .claim-num { font-weight: 500; color: #e2e8f0; font-family: 'Inter', monospace; font-size: 12px; }
+  .client-name { font-weight: 500; color: #e2e8f0; }
+  .policy-ref { font-family: 'Inter', monospace; font-size: 12px; color: #94a3b8; }
+  .policy-none { color: #475569; font-style: italic; font-size: 12px; }
+
+  .amount { font-variant-numeric: tabular-nums; font-weight: 500; }
+  .amount-cell { display: flex; align-items: center; gap: 6px; }
+  .priority-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; flex-shrink: 0; }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .status-badge.open { background: rgba(245,158,11,0.12); color: #fbbf24; }
+  .status-badge.submitted { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .status-badge.in-progress { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+  .status-badge.settled { background: rgba(34,197,94,0.12); color: #4ade80; }
+  .status-badge.rejected { background: rgba(239,68,68,0.12); color: #f87171; }
+
+  .assigned { font-size: 12px; font-weight: 600; color: #94a3b8; }
+
+  /* Pagination */
+  .table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px;
+    color: #64748b;
+  }
+  .pagination { display: flex; gap: 4px; }
+  .page-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .page-btn:hover { background: rgba(255,255,255,0.06); }
+  .page-btn.active { background: rgba(59,130,246,0.15); color: #3b82f6; border-color: rgba(59,130,246,0.3); }
+  .page-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* Chat Panel */
+  .chat {
+    background: #0d1220;
+    border-left: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+  .chat-collapse { background: none; border: none; color: #64748b; cursor: pointer; font-size: 18px; }
+  .chat-collapse:hover { color: #94a3b8; }
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  .msg { max-width: 90%; }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .msg-bubble {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #c8cfd8;
+    border-radius: 16px 16px 16px 4px;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #e2e8f0;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+  }
+  .chat-input::placeholder { color: #475569; }
+  .chat-input:focus { border-color: rgba(59,130,246,0.3); }
+  .send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: none;
+    color: #0a0e17;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .send-btn:hover { background: #60a5fa; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+
+    <div class="nav-item">
+      <span class="nav-icon">&#9638;</span> Dashboard
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9782;</span> Clients
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9744;</span> Policies
+    </div>
+    <div class="nav-item active">
+      <span class="nav-icon">&#9889;</span> Claims
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9776;</span> Commission
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">Claims</div>
+      <div class="header-actions">
+        <div class="search-wrapper">
+          <span class="search-icon">&#128269;</span>
+          <input class="search-input" placeholder="Search claims..." />
+        </div>
+        <select class="filter-select">
+          <option>All Status</option>
+          <option>Open</option>
+          <option>Submitted</option>
+          <option>In Progress</option>
+          <option>Settled</option>
+          <option>Rejected</option>
+        </select>
+        <button class="btn btn-primary">+ New Claim</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card accent-red">
+        <div class="stat-label">Open Claims</div>
+        <div class="stat-value">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Submitted</div>
+        <div class="stat-value">2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Claimed</div>
+        <div class="stat-value">R 505,000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Settlement Time</div>
+        <div class="stat-value">14 days</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Claim #</th>
+            <th>Client</th>
+            <th>Policy</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Date Filed</th>
+            <th>Status</th>
+            <th>Assigned To</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="claim-num">CLM-2026-001</span></td>
+            <td><span class="client-name">Jacobs Family</span></td>
+            <td><span class="policy-none">&mdash;</span></td>
+            <td>Motor Theft</td>
+            <td><span class="amount-cell"><span class="priority-dot"></span><span class="amount">R 280,000</span></span></td>
+            <td>10 Mar 2026</td>
+            <td><span class="status-badge submitted">Submitted</span></td>
+            <td><span class="assigned">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-002</span></td>
+            <td><span class="client-name">Botha Family</span></td>
+            <td><span class="policy-ref">HOL-HOM-4455</span></td>
+            <td>Water Damage</td>
+            <td><span class="amount">R 45,000</span></td>
+            <td>08 Mar 2026</td>
+            <td><span class="status-badge open">Open</span></td>
+            <td><span class="assigned">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-003</span></td>
+            <td><span class="client-name">Van der Merwe Trust</span></td>
+            <td><span class="policy-ref">BRY-COM-4421</span></td>
+            <td>Fire Damage</td>
+            <td><span class="amount-cell"><span class="priority-dot"></span><span class="amount">R 180,000</span></span></td>
+            <td>05 Mar 2026</td>
+            <td><span class="status-badge open">Open</span></td>
+            <td><span class="assigned">SP</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-004</span></td>
+            <td><span class="client-name">Nkosi Transport</span></td>
+            <td><span class="policy-ref">SAN-FLT-7782</span></td>
+            <td>Vehicle Collision</td>
+            <td><span class="amount-cell"><span class="priority-dot"></span><span class="amount">R 120,000</span></span></td>
+            <td>28 Feb 2026</td>
+            <td><span class="status-badge in-progress">In Progress</span></td>
+            <td><span class="assigned">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-005</span></td>
+            <td><span class="client-name">Dlamini Family</span></td>
+            <td><span class="policy-ref">BRY-MOT-5567</span></td>
+            <td>Windscreen</td>
+            <td><span class="amount">R 8,500</span></td>
+            <td>25 Feb 2026</td>
+            <td><span class="status-badge settled">Settled</span></td>
+            <td><span class="assigned">AI</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-006</span></td>
+            <td><span class="client-name">Williams Family</span></td>
+            <td><span class="policy-ref">OMI-HOM-2244</span></td>
+            <td>Burst Geyser</td>
+            <td><span class="amount">R 22,000</span></td>
+            <td>20 Feb 2026</td>
+            <td><span class="status-badge settled">Settled</span></td>
+            <td><span class="assigned">SP</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-007</span></td>
+            <td><span class="client-name">Patel Body Corp</span></td>
+            <td><span class="policy-none">&mdash;</span></td>
+            <td>Liability</td>
+            <td><span class="amount-cell"><span class="priority-dot"></span><span class="amount">R 350,000</span></span></td>
+            <td>15 Feb 2026</td>
+            <td><span class="status-badge rejected">Rejected</span></td>
+            <td><span class="assigned">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-num">CLM-2026-008</span></td>
+            <td><span class="client-name">Moosa Family</span></td>
+            <td><span class="policy-ref">HOL-HOM-9981</span></td>
+            <td>Theft</td>
+            <td><span class="amount">R 65,000</span></td>
+            <td>10 Feb 2026</td>
+            <td><span class="status-badge in-progress">In Progress</span></td>
+            <td><span class="assigned">GM</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <span>Showing 1-8 of 8 claims</span>
+        <div class="pagination">
+          <button class="page-btn" disabled>&lsaquo;</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn" disabled>&rsaquo;</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chat Panel -->
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="chat-title">Chat</div>
+      <button class="chat-collapse">&raquo;</button>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg msg-ai">
+        <div class="msg-bubble">You have 3 open claims requiring attention. CLM-2026-001 (Jacobs Family, Motor Theft) and CLM-2026-003 (Van der Merwe Trust, Fire Damage) are both high-value and should be prioritised. Would you like me to draft submission documents for either?</div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <input class="chat-input" placeholder="Message BrokerOS..." />
+      <button class="send-btn">&uarr;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

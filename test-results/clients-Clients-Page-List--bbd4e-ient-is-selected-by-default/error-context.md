@@ -1,0 +1,44 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: BrokerOS
+      - button "Collapse sidebar" [ref=e7] [cursor=pointer]:
+        - img [ref=e8]
+    - generic [ref=e11]: McDonogh Insurance Brokers
+    - navigation [ref=e12]:
+      - button "Dashboard" [ref=e13] [cursor=pointer]:
+        - img [ref=e14]
+        - text: Dashboard
+      - button "Clients" [active] [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+        - text: Clients
+      - button "Policies" [ref=e25] [cursor=pointer]:
+        - img [ref=e26]
+        - text: Policies
+      - button "Claims 2" [ref=e29] [cursor=pointer]:
+        - img [ref=e30]
+        - text: Claims
+        - generic [ref=e32]: "2"
+      - button "Settings" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+        - text: Settings
+    - button "Switch to light theme" [ref=e37] [cursor=pointer]:
+      - img [ref=e38]
+    - generic [ref=e44]:
+      - generic [ref=e45]: GM
+      - generic [ref=e46]:
+        - generic [ref=e47]: Grant McDonogh
+        - generic [ref=e48]: Key Individual
+  - generic [ref=e49]:
+    - generic [ref=e50]:
+      - generic [ref=e52]:
+        - generic [ref=e53]: Clients
+        - generic [ref=e54]: "0"
+      - generic [ref=e55]:
+        - img
+        - textbox "Search clients..." [ref=e56]
+    - generic [ref=e59]: Select a client to view details
+```

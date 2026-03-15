@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Claims (Light Table)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f5f7; color: #374151; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr 380px; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #2563eb; }
+  .org-name { font-size: 12px; color: #9ca3af; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #6b7280; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: #f3f4f6; color: #374151; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #2563eb; color: #fff; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #e5e7eb; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #111827; font-weight: 500; }
+  .user-info .role { color: #9ca3af; font-size: 11px; }
+
+  /* Main Content */
+  .main { padding: 24px; overflow-y: auto; background: #f4f5f7; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .main-title { font-size: 22px; font-weight: 700; color: #111827; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .search-bar {
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px 12px 8px 32px;
+    font-size: 13px;
+    color: #111827;
+    outline: none;
+    width: 220px;
+    font-family: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+  }
+  .search-bar::placeholder { color: #9ca3af; }
+  .search-bar:focus { border-color: #2563eb; background-color: #fff; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 10px center; }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .btn-ghost { background: #fff; color: #6b7280; border: 1px solid #e5e7eb; }
+  .btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; }
+  .btn-primary { background: #2563eb; color: #fff; font-weight: 600; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .filter-select {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #6b7280;
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+  .filter-select:hover { border-color: #d1d5db; }
+
+  /* Stats Row */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500; }
+  .stat-value { font-size: 22px; font-weight: 700; color: #111827; }
+  .stat-value.red { color: #dc2626; }
+
+  /* Table */
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: #f9fafb;
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  tbody tr { border-bottom: 1px solid #f3f4f6; transition: all 0.15s; cursor: pointer; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f9fafb; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
+  tbody td { padding: 12px 14px; font-size: 13px; color: #374151; }
+  .claim-number { font-weight: 600; color: #111827; }
+  .client-name { font-weight: 500; color: #111827; }
+  .policy-ref { color: #6b7280; font-size: 12px; }
+  .no-policy { color: #9ca3af; font-style: italic; font-size: 12px; }
+  .amount { font-weight: 600; color: #111827; white-space: nowrap; }
+  .amount-high { display: inline-flex; align-items: center; gap: 6px; }
+  .amount-high::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #dc2626;
+    flex-shrink: 0;
+  }
+  .date { color: #6b7280; font-size: 13px; white-space: nowrap; }
+  .assignee {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .assignee-gm { background: #dbeafe; color: #1e40af; }
+  .assignee-sp { background: #fce7f3; color: #9d174d; }
+  .assignee-ai { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+
+  /* Status badges */
+  .status {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .status-open { background: #fef3c7; color: #92400e; }
+  .status-submitted { background: #dbeafe; color: #1e40af; }
+  .status-in-progress { background: #e0e7ff; color: #3730a3; }
+  .status-settled { background: #d1fae5; color: #065f46; }
+  .status-rejected { background: #fee2e2; color: #991b1b; }
+
+  /* Pagination */
+  .table-footer {
+    padding: 12px 14px;
+    border-top: 1px solid #f3f4f6;
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Chat Panel */
+  .chat {
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-title { font-size: 14px; font-weight: 600; color: #111827; }
+  .chat-collapse { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; }
+  .chat-collapse:hover { color: #6b7280; }
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #fafbfc; }
+  .msg { max-width: 90%; }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .msg-bubble { background: #ffffff; border: 1px solid #e5e7eb; color: #374151; border-radius: 16px 16px 16px 4px; padding: 10px 14px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .msg-ai .msg-bubble strong { color: #111827; }
+  .msg-user { align-self: flex-end; }
+  .msg-user .msg-bubble { background: #111827; color: #f9fafb; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+
+  .chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #111827;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+  }
+  .chat-input::placeholder { color: #9ca3af; }
+  .chat-input:focus { border-color: #2563eb; background: #fff; }
+  .mic-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .mic-btn:hover { background: #eff6ff; color: #2563eb; border-color: #2563eb; }
+  .send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .send-btn:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+
+    <div class="nav-item">
+      <span class="nav-icon">&#9638;</span> Dashboard
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9782;</span> Clients
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9744;</span> Policies
+    </div>
+    <div class="nav-item active">
+      <span class="nav-icon">&#9889;</span> Claims
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9776;</span> Commission
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">Claims</div>
+      <div class="header-actions">
+        <input class="search-bar" type="text" placeholder="Search claims..." />
+        <select class="filter-select">
+          <option>All Statuses</option>
+          <option>Open</option>
+          <option>Submitted</option>
+          <option>In Progress</option>
+          <option>Settled</option>
+          <option>Rejected</option>
+        </select>
+        <button class="btn btn-primary">+ New Claim</button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Open Claims</div>
+        <div class="stat-value red">3</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Submitted</div>
+        <div class="stat-value">2</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Claimed</div>
+        <div class="stat-value">R 505,000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Settlement</div>
+        <div class="stat-value">14 days</div>
+      </div>
+    </div>
+
+    <!-- Claims Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Claim #</th>
+            <th>Client</th>
+            <th>Policy</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Filed</th>
+            <th>Status</th>
+            <th>Assigned</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="claim-number">CLM-2026-001</span></td>
+            <td><span class="client-name">Jacobs Family</span></td>
+            <td><span class="no-policy">&mdash;</span></td>
+            <td>Motor Theft</td>
+            <td><span class="amount"><span class="amount-high">R 280,000</span></span></td>
+            <td><span class="date">10 Mar</span></td>
+            <td><span class="status status-submitted">Submitted</span></td>
+            <td><span class="assignee assignee-gm">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-002</span></td>
+            <td><span class="client-name">Botha Family</span></td>
+            <td><span class="policy-ref">HOL-HOM-4455</span></td>
+            <td>Water Damage</td>
+            <td><span class="amount">R 45,000</span></td>
+            <td><span class="date">08 Mar</span></td>
+            <td><span class="status status-open">Open</span></td>
+            <td><span class="assignee assignee-gm">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-003</span></td>
+            <td><span class="client-name">Van der Merwe Trust</span></td>
+            <td><span class="policy-ref">BRY-COM-4421</span></td>
+            <td>Fire Damage</td>
+            <td><span class="amount"><span class="amount-high">R 180,000</span></span></td>
+            <td><span class="date">05 Mar</span></td>
+            <td><span class="status status-open">Open</span></td>
+            <td><span class="assignee assignee-sp">SP</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-004</span></td>
+            <td><span class="client-name">Nkosi Transport</span></td>
+            <td><span class="policy-ref">SAN-FLT-7782</span></td>
+            <td>Collision</td>
+            <td><span class="amount"><span class="amount-high">R 120,000</span></span></td>
+            <td><span class="date">28 Feb</span></td>
+            <td><span class="status status-in-progress">In Progress</span></td>
+            <td><span class="assignee assignee-gm">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-005</span></td>
+            <td><span class="client-name">Dlamini Family</span></td>
+            <td><span class="policy-ref">BRY-MOT-5567</span></td>
+            <td>Windscreen</td>
+            <td><span class="amount">R 8,500</span></td>
+            <td><span class="date">25 Feb</span></td>
+            <td><span class="status status-settled">Settled</span></td>
+            <td><span class="assignee assignee-ai">AI</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-006</span></td>
+            <td><span class="client-name">Williams Family</span></td>
+            <td><span class="policy-ref">OMI-HOM-2244</span></td>
+            <td>Burst Geyser</td>
+            <td><span class="amount">R 22,000</span></td>
+            <td><span class="date">20 Feb</span></td>
+            <td><span class="status status-settled">Settled</span></td>
+            <td><span class="assignee assignee-sp">SP</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-007</span></td>
+            <td><span class="client-name">Patel Body Corp</span></td>
+            <td><span class="no-policy">&mdash;</span></td>
+            <td>Liability</td>
+            <td><span class="amount"><span class="amount-high">R 350,000</span></span></td>
+            <td><span class="date">15 Feb</span></td>
+            <td><span class="status status-rejected">Rejected</span></td>
+            <td><span class="assignee assignee-gm">GM</span></td>
+          </tr>
+          <tr>
+            <td><span class="claim-number">CLM-2026-008</span></td>
+            <td><span class="client-name">Moosa Family</span></td>
+            <td><span class="policy-ref">HOL-HOM-9981</span></td>
+            <td>Theft</td>
+            <td><span class="amount">R 65,000</span></td>
+            <td><span class="date">10 Feb</span></td>
+            <td><span class="status status-in-progress">In Progress</span></td>
+            <td><span class="assignee assignee-gm">GM</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <span>Showing 1-8 of 8 claims</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chat Panel -->
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="chat-title">Chat</div>
+      <button class="chat-collapse">&raquo;</button>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg msg-user">
+        <div class="msg-bubble">What's the status of open claims?</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          You currently have <strong>3 open claims</strong> totalling <strong>R 505,000</strong> in claimed value:<br><br>
+          &bull; <strong>CLM-2026-001</strong> &mdash; Jacobs Family motor theft (R 280K) submitted to insurer<br>
+          &bull; <strong>CLM-2026-002</strong> &mdash; Botha water damage (R 45K) awaiting documentation<br>
+          &bull; <strong>CLM-2026-003</strong> &mdash; Van der Merwe fire damage (R 180K) pending assessor report<br><br>
+          The Jacobs claim is the highest priority &mdash; would you like me to follow up with Santam on the assessment timeline?
+        </div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">Yes, draft a follow-up email for the Jacobs claim</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          I've drafted a follow-up email to Santam Claims regarding <strong>CLM-2026-001</strong>. It requests an update on the assessment timeline and references the case number. Ready for your review in Drafts.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <button class="mic-btn" title="Voice input">&#127908;</button>
+      <input class="chat-input" placeholder="Message BrokerOS..." />
+      <button class="send-btn">&uarr;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

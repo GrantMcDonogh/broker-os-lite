@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Clients (Light Table)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f5f7; color: #374151; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr 380px; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #2563eb; }
+  .org-name { font-size: 12px; color: #9ca3af; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #6b7280; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: #f3f4f6; color: #374151; }
+  .nav-item.active { background: #eff6ff; color: #2563eb; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #2563eb; color: #fff; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid #e5e7eb; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #111827; font-weight: 500; }
+  .user-info .role { color: #9ca3af; font-size: 11px; }
+
+  /* Main Content */
+  .main { padding: 24px; overflow-y: auto; background: #f4f5f7; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .main-title { font-size: 22px; font-weight: 700; color: #111827; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .search-bar {
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px 14px 8px 36px;
+    font-size: 13px;
+    color: #111827;
+    outline: none;
+    width: 240px;
+    font-family: inherit;
+    position: relative;
+  }
+  .search-bar::placeholder { color: #9ca3af; }
+  .search-bar:focus { border-color: #2563eb; background: #fff; }
+  .search-wrapper { position: relative; }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost { background: #fff; color: #6b7280; border: 1px solid #e5e7eb; }
+  .btn-ghost:hover { background: #f9fafb; border-color: #d1d5db; }
+  .btn-primary { background: #2563eb; color: #fff; font-weight: 600; }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  /* Stats Row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+  .stat-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500; }
+  .stat-value { font-size: 24px; font-weight: 700; color: #111827; }
+  .stat-value.amber { color: #d97706; }
+
+  /* Table Card */
+  .table-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .client-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .client-table thead th {
+    background: #f9fafb;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .client-table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .client-table tbody tr:last-child { border-bottom: none; }
+  .client-table tbody tr:hover { background: #f9fafb; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
+  .client-table tbody td {
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #374151;
+  }
+  .client-name { color: #111827; font-weight: 500; }
+  .type-chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .type-individual { background: #ede9fe; color: #7c3aed; }
+  .type-corporate { background: #dbeafe; color: #2563eb; }
+  .type-trust { background: #dcfce7; color: #16a34a; }
+  .type-bodycorp { background: #ffedd5; color: #ea580c; }
+
+  .status-cell { display: flex; align-items: center; gap: 6px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.active { background: #059669; }
+  .status-dot.warning { background: #d97706; }
+  .status-dot.renewal { background: #2563eb; }
+  .status-text { font-size: 12px; font-weight: 500; }
+  .status-text.active { color: #059669; }
+  .status-text.warning { color: #d97706; }
+  .status-text.renewal { color: #2563eb; }
+
+  /* Pagination */
+  .table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 13px;
+    color: #6b7280;
+  }
+  .page-buttons { display: flex; gap: 4px; }
+  .page-btn {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .page-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+  .page-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .page-btn.ellipsis { border: none; background: none; cursor: default; color: #9ca3af; }
+  .page-btn.ellipsis:hover { background: none; }
+
+  /* Chat Panel */
+  .chat {
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-title { font-size: 14px; font-weight: 600; color: #111827; }
+  .chat-collapse { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 18px; }
+  .chat-collapse:hover { color: #6b7280; }
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: #fafbfc; }
+  .msg { max-width: 90%; }
+  .msg-user { align-self: flex-end; }
+  .msg-user .msg-bubble { background: #111827; color: #f9fafb; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+  .msg-ai { align-self: flex-start; }
+  .msg-ai .msg-bubble { background: #ffffff; border: 1px solid #e5e7eb; color: #374151; border-radius: 16px 16px 16px 4px; padding: 10px 14px; font-size: 14px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .msg-ai .msg-bubble strong { color: #111827; }
+
+  .chat-input-area {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: #111827;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+  }
+  .chat-input::placeholder { color: #9ca3af; }
+  .chat-input:focus { border-color: #2563eb; background: #fff; }
+  .mic-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #f4f5f7;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .mic-btn:hover { background: #eff6ff; color: #2563eb; border-color: #2563eb; }
+  .send-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .send-btn:hover { background: #1d4ed8; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+
+    <div class="nav-item">
+      <span class="nav-icon">&#9638;</span> Dashboard
+    </div>
+    <div class="nav-item active">
+      <span class="nav-icon">&#9782;</span> Clients
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9744;</span> Policies
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9889;</span> Claims
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9776;</span> Commission
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">Clients</div>
+      <div class="header-actions">
+        <div class="search-wrapper">
+          <span class="search-icon">&#128269;</span>
+          <input class="search-bar" placeholder="Search clients..." />
+        </div>
+        <button class="btn btn-ghost">&#9683; Filter</button>
+        <button class="btn btn-primary">+ Add Client</button>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Clients</div>
+        <div class="stat-value">47</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Policies</div>
+        <div class="stat-value">89</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Renewals This Month</div>
+        <div class="stat-value amber">12</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Premium Book</div>
+        <div class="stat-value">R 4.2M</div>
+      </div>
+    </div>
+
+    <!-- Client Table -->
+    <div class="table-card">
+      <table class="client-table">
+        <thead>
+          <tr>
+            <th>Client Name</th>
+            <th>Type</th>
+            <th>Policies</th>
+            <th>Annual Premium</th>
+            <th>Next Renewal</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="client-name">Van der Merwe Family Trust</td>
+            <td><span class="type-chip type-trust">Trust</span></td>
+            <td>3</td>
+            <td>R 470,000</td>
+            <td>18 Mar 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">John Smith</td>
+            <td><span class="type-chip type-individual">Individual</span></td>
+            <td>1</td>
+            <td>R 28,000</td>
+            <td>01 Aug 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Nkosi Transport (Pty) Ltd</td>
+            <td><span class="type-chip type-corporate">Corporate</span></td>
+            <td>4</td>
+            <td>R 680,000</td>
+            <td>15 Apr 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Botha Family</td>
+            <td><span class="type-chip type-individual">Individual</span></td>
+            <td>1</td>
+            <td>R 14,000</td>
+            <td>20 May 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Patel Body Corporate</td>
+            <td><span class="type-chip type-bodycorp">Body Corp</span></td>
+            <td>2</td>
+            <td>R 95,000</td>
+            <td>10 Jun 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Moosa Family</td>
+            <td><span class="type-chip type-individual">Individual</span></td>
+            <td>1</td>
+            <td>R 18,500</td>
+            <td>25 Mar 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Dlamini Family</td>
+            <td><span class="type-chip type-individual">Individual</span></td>
+            <td>1</td>
+            <td>R 15,000</td>
+            <td>10 Apr 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Jacobs Family</td>
+            <td><span class="type-chip type-individual">Individual</span></td>
+            <td>1</td>
+            <td>R 12,000</td>
+            <td>Claim pending</td>
+            <td><div class="status-cell"><span class="status-dot warning"></span><span class="status-text warning">Warning</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Williams Family</td>
+            <td><span class="type-chip type-individual">Individual</span></td>
+            <td>1</td>
+            <td>R 12,000</td>
+            <td>14 Mar 2026</td>
+            <td><div class="status-cell"><span class="status-dot renewal"></span><span class="status-text renewal">Renewal due</span></div></td>
+          </tr>
+          <tr>
+            <td class="client-name">Cape Winelands Estate</td>
+            <td><span class="type-chip type-trust">Trust</span></td>
+            <td>5</td>
+            <td>R 1,200,000</td>
+            <td>01 Jul 2026</td>
+            <td><div class="status-cell"><span class="status-dot active"></span><span class="status-text active">Active</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-footer">
+        <span>Showing 1&ndash;10 of 47 clients</span>
+        <div class="page-buttons">
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn ellipsis">&hellip;</button>
+          <button class="page-btn">5</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chat Panel -->
+  <aside class="chat">
+    <div class="chat-header">
+      <div class="chat-title">Chat</div>
+      <button class="chat-collapse">&raquo;</button>
+    </div>
+
+    <div class="chat-messages">
+      <div class="msg msg-user">
+        <div class="msg-bubble">Show me clients with renewals coming up this month</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          You have <strong>3 clients</strong> with renewals in March 2026:<br><br>
+          &bull; <strong>Van der Merwe Family Trust</strong> &mdash; 18 Mar (R 470k)<br>
+          &bull; <strong>Moosa Family</strong> &mdash; 25 Mar (R 18.5k)<br>
+          &bull; <strong>Williams Family</strong> &mdash; 14 Mar (R 12k)<br><br>
+          Williams Family is due today. Would you like me to prepare renewal documentation?
+        </div>
+      </div>
+
+      <div class="msg msg-user">
+        <div class="msg-bubble">Yes, start with Williams</div>
+      </div>
+
+      <div class="msg msg-ai">
+        <div class="msg-bubble">
+          Generating renewal pack for <strong>Williams Family</strong> homeowners policy with Old Mutual Insure. I'll notify you when it's ready for review.
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <button class="mic-btn" title="Voice input">&#127908;</button>
+      <input class="chat-input" placeholder="Message BrokerOS..." />
+      <button class="send-btn">&uarr;</button>
+    </div>
+  </aside>
+</div>
+</body>
+</html>

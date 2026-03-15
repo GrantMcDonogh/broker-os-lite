@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrokerOS — Claims</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0a0e17; color: #c8cfd8; height: 100vh; overflow: hidden; }
+
+  .shell { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: #0d1220;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .logo { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .logo span { color: #3b82f6; }
+  .org-name { font-size: 12px; color: #64748b; margin-bottom: 32px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px; font-size: 14px;
+    color: #94a3b8; cursor: pointer; margin-bottom: 2px; transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+  .nav-item.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .nav-icon { width: 20px; text-align: center; font-size: 16px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-badge { margin-left: auto; background: #3b82f6; color: #0a0e17; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; }
+  .sidebar-footer { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #0a0e17; flex-shrink: 0; }
+  .user-info { font-size: 13px; }
+  .user-info .name { color: #e2e8f0; font-weight: 500; }
+  .user-info .role { color: #64748b; font-size: 11px; }
+
+  /* Main Content */
+  .main { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .main-title { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .view-toggle-btn {
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: #64748b;
+    transition: all 0.15s;
+  }
+  .view-toggle-btn.active {
+    background: rgba(59,130,246,0.15);
+    color: #3b82f6;
+  }
+  .view-toggle-btn:hover:not(.active) { color: #94a3b8; }
+
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .btn-primary { background: #3b82f6; color: #0a0e17; font-weight: 600; }
+  .btn-primary:hover { background: #60a5fa; }
+
+  /* Filter chips */
+  .filter-chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { background: rgba(255,255,255,0.05); color: #c8cfd8; }
+  .chip.active {
+    background: rgba(59,130,246,0.12);
+    border-color: rgba(59,130,246,0.25);
+    color: #3b82f6;
+  }
+
+  /* Kanban Board */
+  .kanban {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .kanban-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .col-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .col-dot.amber { background: #f59e0b; }
+  .col-dot.blue { background: #3b82f6; }
+  .col-dot.green { background: #22c55e; }
+  .col-dot.red { background: #ef4444; }
+
+  .col-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  .col-count {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    background: rgba(255,255,255,0.06);
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+
+  .col-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* Claim Card */
+  .claim-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .claim-card:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .claim-number {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 0.3px;
+  }
+  .type-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .tag-motor { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .tag-homeowners { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tag-commercial { background: rgba(251,146,60,0.15); color: #fb923c; }
+  .tag-liability { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .tag-theft { background: rgba(239,68,68,0.15); color: #f87171; }
+
+  .card-client {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .priority-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+  }
+  .card-policy {
+    font-size: 11px;
+    color: #64748b;
+    font-family: 'Courier New', Courier, monospace;
+    margin-bottom: 12px;
+  }
+
+  .card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .card-amount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-date {
+    font-size: 11px;
+    color: #64748b;
+  }
+  .card-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #0a0e17;
+    flex-shrink: 0;
+  }
+  .avatar-gm { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+  .avatar-sp { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .avatar-bf { background: linear-gradient(135deg, #22c55e, #16a34a); }
+  .avatar-ai { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+  /* AI status badge */
+  .ai-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 5px 8px;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #60a5fa;
+  }
+  .ai-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #3b82f6;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Settled info */
+  .settled-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #4ade80;
+  }
+
+  /* Rejected reason */
+  .rejected-reason {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 4px 8px;
+    background: rgba(239,68,68,0.08);
+    border-radius: 4px;
+    font-size: 11px;
+    color: #f87171;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="logo">Broker<span>OS</span></div>
+    <div class="org-name">McDonogh Insurance Brokers</div>
+
+    <div class="nav-item">
+      <span class="nav-icon">&#9638;</span> Dashboard
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9782;</span> Clients
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9744;</span> Policies
+    </div>
+    <div class="nav-item active">
+      <span class="nav-icon">&#9889;</span> Claims
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9776;</span> Commission
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">&#9881;</span> Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">GM</div>
+      <div class="user-info">
+        <div class="name">Grant McDonogh</div>
+        <div class="role">Key Individual</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="main-header">
+      <div class="main-title">Claims</div>
+      <div class="header-actions">
+        <div class="view-toggle">
+          <button class="view-toggle-btn active">Board</button>
+          <button class="view-toggle-btn">Table</button>
+        </div>
+        <button class="btn btn-primary">+ New Claim</button>
+      </div>
+    </div>
+
+    <div class="filter-chips">
+      <div class="chip active">All Types</div>
+      <div class="chip">Motor</div>
+      <div class="chip">Homeowners</div>
+      <div class="chip">Commercial</div>
+      <div class="chip">Liability</div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban">
+
+      <!-- Column: Open -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="col-dot amber"></div>
+          <div class="col-title">Open</div>
+          <div class="col-count">2</div>
+        </div>
+        <div class="col-cards">
+
+          <!-- CLM-2026-002 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-002</span>
+              <span class="type-tag tag-homeowners">Homeowners</span>
+            </div>
+            <div class="card-client">Botha Family</div>
+            <div class="card-desc">Water Damage</div>
+            <div class="card-policy">HOL-HOM-4455</div>
+            <div class="card-bottom">
+              <span class="card-amount">R 45,000</span>
+              <div class="card-meta">
+                <span class="card-date">10 Mar</span>
+                <div class="card-avatar avatar-bf">BF</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLM-2026-003 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-003</span>
+              <span class="type-tag tag-commercial">Commercial</span>
+            </div>
+            <div class="card-client">
+              Van der Merwe Trust
+              <span class="priority-dot"></span>
+            </div>
+            <div class="card-desc">Fire Damage</div>
+            <div class="card-policy">BRY-COM-4421</div>
+            <div class="card-bottom">
+              <span class="card-amount">R 180,000</span>
+              <div class="card-meta">
+                <span class="card-date">8 Mar</span>
+                <div class="card-avatar avatar-sp">SP</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Column: In Progress -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="col-dot blue"></div>
+          <div class="col-title">In Progress</div>
+          <div class="col-count">3</div>
+        </div>
+        <div class="col-cards">
+
+          <!-- CLM-2026-001 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-001</span>
+              <span class="type-tag tag-motor">Motor</span>
+            </div>
+            <div class="card-client">
+              Jacobs Family
+              <span class="priority-dot"></span>
+            </div>
+            <div class="card-desc">Motor Theft</div>
+            <div class="card-policy">DIS-MOT-4490</div>
+            <div class="ai-status">
+              <span class="ai-status-dot"></span>
+              Gathering documentation...
+            </div>
+            <div class="card-bottom" style="margin-top: 10px;">
+              <span class="card-amount">R 280,000</span>
+              <div class="card-meta">
+                <span class="card-date">5 Mar</span>
+                <div class="card-avatar avatar-gm">GM</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLM-2026-004 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-004</span>
+              <span class="type-tag tag-motor">Motor</span>
+            </div>
+            <div class="card-client">
+              Nkosi Transport
+              <span class="priority-dot"></span>
+            </div>
+            <div class="card-desc">Vehicle Collision</div>
+            <div class="card-policy">SAN-FLT-7782</div>
+            <div class="card-bottom">
+              <span class="card-amount">R 120,000</span>
+              <div class="card-meta">
+                <span class="card-date">3 Mar</span>
+                <div class="card-avatar avatar-gm">GM</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLM-2026-008 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-008</span>
+              <span class="type-tag tag-homeowners">Homeowners</span>
+            </div>
+            <div class="card-client">Moosa Family</div>
+            <div class="card-desc">Theft</div>
+            <div class="card-policy">HOL-HOM-9981</div>
+            <div class="card-bottom">
+              <span class="card-amount">R 65,000</span>
+              <div class="card-meta">
+                <span class="card-date">12 Mar</span>
+                <div class="card-avatar avatar-gm">GM</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Column: Settled -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="col-dot green"></div>
+          <div class="col-title">Settled</div>
+          <div class="col-count">2</div>
+        </div>
+        <div class="col-cards">
+
+          <!-- CLM-2026-005 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-005</span>
+              <span class="type-tag tag-motor">Motor</span>
+            </div>
+            <div class="card-client">Dlamini Family</div>
+            <div class="card-desc">Windscreen</div>
+            <div class="settled-info">&#10003; Settled in 5 days</div>
+            <div class="card-bottom" style="margin-top: 10px;">
+              <span class="card-amount">R 8,500</span>
+              <div class="card-meta">
+                <span class="card-date">28 Feb</span>
+                <div class="card-avatar avatar-ai">AI</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLM-2026-006 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-006</span>
+              <span class="type-tag tag-homeowners">Homeowners</span>
+            </div>
+            <div class="card-client">Williams Family</div>
+            <div class="card-desc">Burst Geyser</div>
+            <div class="settled-info">&#10003; Settled in 12 days</div>
+            <div class="card-bottom" style="margin-top: 10px;">
+              <span class="card-amount">R 22,000</span>
+              <div class="card-meta">
+                <span class="card-date">1 Mar</span>
+                <div class="card-avatar avatar-sp">SP</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Column: Rejected -->
+      <div class="kanban-col">
+        <div class="col-header">
+          <div class="col-dot red"></div>
+          <div class="col-title">Rejected</div>
+          <div class="col-count">1</div>
+        </div>
+        <div class="col-cards">
+
+          <!-- CLM-2026-007 -->
+          <div class="claim-card">
+            <div class="card-top">
+              <span class="claim-number">CLM-2026-007</span>
+              <span class="type-tag tag-liability">Liability</span>
+            </div>
+            <div class="card-client">
+              Patel Body Corp
+              <span class="priority-dot"></span>
+            </div>
+            <div class="card-desc">Liability Claim</div>
+            <div class="rejected-reason">&#10005; Insufficient evidence</div>
+            <div class="card-bottom" style="margin-top: 10px;">
+              <span class="card-amount">R 350,000</span>
+              <div class="card-meta">
+                <span class="card-date">15 Feb</span>
+                <div class="card-avatar avatar-gm">GM</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
