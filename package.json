@@ -7,6 +7,7 @@
     "test:policies": "npx playwright test e2e/policies.spec.ts",
     "test:claims": "npx playwright test e2e/claims.spec.ts",
     "test:cross": "npx playwright test e2e/cross-cutting.spec.ts",
+    "test:settings": "npx playwright test e2e/settings.spec.ts",
     "test:report": "npx playwright show-report test-results/html-report",
     "test:api": "cd backend && npm test"
   },
